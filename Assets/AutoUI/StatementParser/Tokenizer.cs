@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Text;
 
 public class Tokenizer
 {
@@ -98,6 +96,7 @@ public class Tokenizer
         if (currentText.Length > 0) parseResult.Add(new IdentifierToken(currentText.ToString()), source.Length);
 
         MultiCharToken.ReplaceTokens(parseResult);
+        NumberToken.ReplaceTokens(parseResult);
 
         return parseResult;
     }

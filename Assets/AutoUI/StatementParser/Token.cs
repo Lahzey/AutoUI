@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 public abstract class Token : ParsedElement
 {
@@ -57,6 +58,76 @@ public class StringToken : Token
     public override string ToString()
     {
         return "S";
+    }
+}
+
+public class NumberToken : Token
+{
+    public object Value { get; private set; } // can be any type of number (int, float, double, etc.)
+    
+    public NumberToken(object value)
+    {
+        Value = value;
+    }
+
+    public override string ToString()
+    {
+        return "N";
+    }
+
+    public static void ReplaceTokens(ParseResult parseResult)
+    {
+        for (int i = 0; i < parseResult.Elements.Count; i++)
+        {
+            if (parseResult.Elements[i] is not IdentifierToken) continue;
+            
+            IdentifierToken identifierToken = (IdentifierToken) parseResult.Elements[i];
+            
+            bool floatingPoint = false;
+            Match match = Regex.Match(identifierToken.Identifier, @"^([0-9]+)([lLfFdD]?)$");
+            if (!match.Success)
+            {
+                match = Regex.Match(identifierToken.Identifier, @"^([0-9]*\.[0-9]+)([lLfFdD]?)$");
+                if (!match.Success)
+                    continue;
+                floatingPoint = true;
+            }
+            
+            char suffix = match.Groups[2].Value.Length > 0 ? match.Groups[2].Value[0] : ' ';
+            string numberString = match.Groups[1].Value;
+            object number;
+            switch (suffix)
+            {
+                case 'l':
+                case 'L':
+                    number = long.Parse(numberString);
+                    break;
+                case 'f':
+                case 'F':
+                    number = float.Parse(numberString);
+                    break;
+                case 'd':
+                case 'D':
+                    number = double.Parse(numberString);
+                    break;
+                case ' ':
+                    if (floatingPoint)
+                    {
+                        double doubleNumber = double.Parse(numberString);
+                        number = doubleNumber is <= float.MaxValue and >= float.MinValue ? (float) doubleNumber : doubleNumber;
+                    }
+                    else
+                    {
+                        long longNumber = long.Parse(numberString);
+                        number = longNumber is <= int.MaxValue and >= int.MinValue ? (int) longNumber : longNumber;
+                    }
+                    break;
+                default:
+                    throw new ParseException(suffix + " is not a valid number suffix", parseResult.SourceIndexes[i], parseResult.GetSourceEndIndex(i));
+            }
+            
+            parseResult.Elements[i] = new NumberToken(number);
+        }
     }
 }
 
