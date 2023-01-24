@@ -3,10 +3,10 @@
 [ValuePattern(typeof(Value), @"&", typeof(Value))]
 public class AndValue : Value
 {
-    public override object Evaluate()
+    public override object Evaluate(DataContext context)
     {
-        object left = Left.Evaluate();
-        object right = Right.Evaluate();
+        object left = Left.Evaluate(context);
+        object right = Right.Evaluate(context);
         if (!(left is bool) || !(right is bool))
             throw new EvaluationException("Cannot perform AND on non-boolean values", this);
         return (bool) left & (bool) right;
@@ -19,10 +19,10 @@ public class AndValue : Value
 [ValuePattern(typeof(Value), @"&&", typeof(Value))]
 public class LogicalAndValue : Value
 {
-    public override object Evaluate()
+    public override object Evaluate(DataContext context)
     {
-        object left = Left.Evaluate();
-        object right = Right.Evaluate();
+        object left = Left.Evaluate(context);
+        object right = Right.Evaluate(context);
         if (!(left is bool) || !(right is bool))
             throw new EvaluationException("Cannot perform AND on non-boolean values", this);
         return (bool) left && (bool) right;
@@ -35,10 +35,10 @@ public class LogicalAndValue : Value
 [ValuePattern(typeof(Value), @"\|", typeof(Value))]
 public class OrValue : Value
 {
-    public override object Evaluate()
+    public override object Evaluate(DataContext context)
     {
-        object left = Left.Evaluate();
-        object right = Right.Evaluate();
+        object left = Left.Evaluate(context);
+        object right = Right.Evaluate(context);
         if (!(left is bool) || !(right is bool))
             throw new EvaluationException("Cannot perform OR on non-boolean values", this);
         return (bool) left | (bool) right;
@@ -51,10 +51,10 @@ public class OrValue : Value
 [ValuePattern(typeof(Value), @"\|\|", typeof(Value))]
 public class LogicalOrValue : Value
 {
-    public override object Evaluate()
+    public override object Evaluate(DataContext context)
     {
-        object left = Left.Evaluate();
-        object right = Right.Evaluate();
+        object left = Left.Evaluate(context);
+        object right = Right.Evaluate(context);
         if (!(left is bool) || !(right is bool))
             throw new EvaluationException("Cannot perform OR on non-boolean values", this);
         return (bool) left || (bool) right;
@@ -67,10 +67,10 @@ public class LogicalOrValue : Value
 [ValuePattern(typeof(Value), @"==", typeof(Value))]
 public class EqualsValue : Value
 {
-    public override object Evaluate()
+    public override object Evaluate(DataContext context)
     {
-        object left = Left.Evaluate();
-        object right = Right.Evaluate();
+        object left = Left.Evaluate(context);
+        object right = Right.Evaluate(context);
         return left == right;
     }
     
@@ -81,10 +81,10 @@ public class EqualsValue : Value
 [ValuePattern(typeof(Value), @"!=", typeof(Value))]
 public class NotEqualsValue : Value
 {
-    public override object Evaluate()
+    public override object Evaluate(DataContext context)
     {
-        object left = Left.Evaluate();
-        object right = Right.Evaluate();
+        object left = Left.Evaluate(context);
+        object right = Right.Evaluate(context);
         return left != right;
     }
     
@@ -95,9 +95,9 @@ public class NotEqualsValue : Value
 [ValuePattern(@"!", typeof(Value))]
 public class NotValue : Value
 {
-    public override object Evaluate()
+    public override object Evaluate(DataContext context)
     {
-        object value = Value.Evaluate();
+        object value = Value.Evaluate(context);
         if (!(value is bool))
             throw new EvaluationException("Cannot perform NOT on non-boolean values", this);
         return !(bool)value;

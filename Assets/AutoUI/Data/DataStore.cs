@@ -10,11 +10,11 @@ public class DataStore : DataContext
 
     public void Set<T>(DataKey<T> key, T value)
     {
-        
+        base.SetLocal(key.Key, value);
     }
     
-    public void Get<T>(DataKey<T> key)
+    public T Get<T>(DataKey<T> key)
     {
-        
+        return (T) base.Get(key.Key);
     }
 }

@@ -1,8 +1,6 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
+using System.Diagnostics;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 public class AutoUIConstraint : MonoBehaviour
 {
@@ -15,8 +13,9 @@ public class AutoUIConstraint : MonoBehaviour
     {
         try
         {
+            long start = Stopwatch.GetTimestamp();
             Value value = ValuePatternMatcher.Parse(statement, out ParseResult parseResult);
-            output = $"[{value.GetType().Name}]: {value.Evaluate()}";
+            output = value.Evaluate(DataStore.Instance) + "";
         }
         catch (ParseException e)
         {

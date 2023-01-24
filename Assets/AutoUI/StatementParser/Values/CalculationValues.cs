@@ -154,10 +154,10 @@ public abstract class CalculationValue : Value
 [ValuePattern(typeof(Value), @"\+", typeof(Value))]
 public class AdditionValue : Value
 {
-    public override object Evaluate()
+    public override object Evaluate(DataContext context)
     {
-        object left = Left.Evaluate();
-        object right = Right.Evaluate();
+        object left = Left.Evaluate(context);
+        object right = Right.Evaluate(context);
         return CalculationValue.PerformOperation(left, right, '+', this);
     }
     
@@ -168,10 +168,10 @@ public class AdditionValue : Value
 [ValuePattern(typeof(Value), @"-", typeof(Value))]
 public class SubtractionValue : Value
 {
-    public override object Evaluate()
+    public override object Evaluate(DataContext context)
     {
-        object left = Left.Evaluate();
-        object right = Right.Evaluate();
+        object left = Left.Evaluate(context);
+        object right = Right.Evaluate(context);
         return CalculationValue.PerformOperation(left, right, '-', this);
     }
     
@@ -182,10 +182,10 @@ public class SubtractionValue : Value
 [ValuePattern(typeof(Value), @"\*", typeof(Value))]
 public class MultiplicationValue : Value
 {
-    public override object Evaluate()
+    public override object Evaluate(DataContext context)
     {
-        object left = Left.Evaluate();
-        object right = Right.Evaluate();
+        object left = Left.Evaluate(context);
+        object right = Right.Evaluate(context);
         return CalculationValue.PerformOperation(left, right, '*', this);
     }
     
@@ -196,10 +196,10 @@ public class MultiplicationValue : Value
 [ValuePattern(typeof(Value), @"\/", typeof(Value))]
 public class DivisionValue : Value
 {
-    public override object Evaluate()
+    public override object Evaluate(DataContext context)
     {
-        object left = Left.Evaluate();
-        object right = Right.Evaluate();
+        object left = Left.Evaluate(context);
+        object right = Right.Evaluate(context);
         return CalculationValue.PerformOperation(left, right, '/', this);
     }
     
@@ -210,10 +210,10 @@ public class DivisionValue : Value
 [ValuePattern(typeof(Value), @"%", typeof(Value))]
 public class ModuloValue : Value
 {
-    public override object Evaluate()
+    public override object Evaluate(DataContext context)
     {
-        object left = Left.Evaluate();
-        object right = Right.Evaluate();
+        object left = Left.Evaluate(context);
+        object right = Right.Evaluate(context);
         return CalculationValue.PerformOperation(left, right, '%', this);
     }
     
@@ -224,10 +224,10 @@ public class ModuloValue : Value
 [ValuePattern(typeof(Value), @"\^", typeof(Value))]
 public class PowerValue : Value
 {
-    public override object Evaluate()
+    public override object Evaluate(DataContext context)
     {
-        object left = Left.Evaluate();
-        object right = Right.Evaluate();
+        object left = Left.Evaluate(context);
+        object right = Right.Evaluate(context);
         return CalculationValue.PerformOperation(left, right, '^', this);
     }
     

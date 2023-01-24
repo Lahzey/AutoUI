@@ -20,11 +20,12 @@ public class DataContext
     
     public void SetLocal(string key, object value)
     {
-        data[key] = value;
+        data[key.ToLower()] = value;
     }
     
     public object Get(string key)
     {
+        key = key.ToLower();
         if (data.ContainsKey(key))
         {
             return data[key];

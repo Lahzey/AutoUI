@@ -2,7 +2,11 @@
 
 public class ParseResult
 {
+    // used for the inspector so it can know what certain source elements map to
     public readonly string Source;
+    public readonly List<Token> tokens = new List<Token>();
+    public readonly List<int> TokenSourceIndexes = new List<int>();
+    
     public readonly List<ParsedElement> Elements = new List<ParsedElement>();
     public readonly List<int> SourceIndexes = new List<int>(); // the start indexes of the elements in the source
     

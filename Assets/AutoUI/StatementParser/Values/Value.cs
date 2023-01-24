@@ -9,15 +9,15 @@ public abstract class Value : ParsedElement
     {
         this.args = args;
     }
-    public abstract object Evaluate();
+    public abstract object Evaluate(DataContext context);
 }
 
 [ValuePattern(typeof(IdentifierToken))]
 public class VariableValue : Value
 {
-    public override object Evaluate()
+    public override object Evaluate(DataContext context)
     {
-        return null;
+        return context.Get(VariableName);
     }
     
     public string VariableName => ((IdentifierToken) args[0]).Identifier;
@@ -26,7 +26,7 @@ public class VariableValue : Value
 [ValuePattern(typeof(StringToken))]
 public class StringValue : Value
 {
-    public override object Evaluate()
+    public override object Evaluate(DataContext context)
     {
         return ((StringToken) args[0]).Value;
     }
@@ -35,35 +35,37 @@ public class StringValue : Value
 [ValuePattern(typeof(Value), @"\.", typeof(VariableValue))]
 public class FieldAccessValue : Value
 {
-    public override object Evaluate()
+    public override object Evaluate(DataContext context)
     {
-        return null;
+        object ObjectValue = Object.Evaluate(context);
+        return ObjectValue.GetType().GetField(FieldName).GetValue(ObjectValue);
     }
-    
-    public object Object => ((Value) args[0]).Evaluate();
+
+    public Value Object => (Value) args[0];
     public string FieldName => ((VariableValue) args[1]).VariableName;
 }
 
 [ValuePattern(typeof(FieldAccessValue), @"=", typeof(Value))]
 public class FieldAssignmentValue : Value
 {
-    public override object Evaluate()
+    public override object Evaluate(DataContext context)
     {
-        object Object = ((FieldAccessValue)args[0]).Object;
+        object ObjectValue = ((FieldAccessValue)args[0]).Object.Evaluate(context);
         string FieldName = ((FieldAccessValue)args[0]).FieldName;
-        object Value = ((Value)args[1]).Evaluate();
-        return null;
+        object Value = ((Value)args[1]).Evaluate(context);
+        ObjectValue.GetType().GetField(FieldName).SetValue(ObjectValue, Value);
+        return Value;
     }
-    
-    public object Value => ((Value) args[1]).Evaluate();
+
+    public Value Value => (Value) args[1];
 }
 
 
 [ValuePattern(@"\(", typeof(Value), @"\)")]
 public class BracketValue : Value
 {
-    public override object Evaluate()
+    public override object Evaluate(DataContext context)
     {
-        return ((Value) args[0]).Evaluate();
+        return ((Value) args[0]).Evaluate(context);
     }
 }
