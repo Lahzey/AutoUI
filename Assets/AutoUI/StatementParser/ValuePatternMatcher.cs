@@ -6,6 +6,8 @@ public class ValuePatternMatcher
 {
     
     private static Dictionary<string, Type> ValueTypePatterns = null;
+    private static Dictionary<string, int> ValueTypePatternPriorities = new Dictionary<string, int>();
+    private static List<string> PatternOrder;
     private static string uid = Guid.NewGuid().ToString();
 
     private static void init()
@@ -26,8 +28,16 @@ public class ValuePatternMatcher
                 if (ValueTypePatterns.ContainsKey(pattern))
                     throw new ArgumentException($"Duplicate use of pattern {pattern} by {type.Name} and {ValueTypePatterns[pattern].Name}.");
                 ValueTypePatterns.Add(pattern, type);
+                
+                // get priority of pattern from PatternPriority attribute (or 0 if not specified)
+                int priority = 0;
+                type.GetCustomAttributes(typeof(PatternPriorityAttribute), false).ToList().ForEach(a => priority = ((PatternPriorityAttribute) a).Priority);
+                ValueTypePatternPriorities.Add(pattern, priority);
             }
         }
+
+        PatternOrder = ValueTypePatterns.Keys.ToList();
+        PatternOrder = PatternOrder.OrderByDescending(i => ValueTypePatternPriorities[i]).ToList();
     }
     
     public static Value Parse(string valueString, out ParseResult parseResult)
@@ -38,18 +48,18 @@ public class ValuePatternMatcher
 
         while (true)
         {
-            if (!PatternMatch.MatchNext(parseResult, ValueTypePatterns)) break;
+            if (!PatternMatch.MatchNext(parseResult, ValueTypePatterns, PatternOrder)) break;
         }
 
-        if (parseResult.Elements.Count > 1 || (parseResult.Elements.Count == 1 && parseResult.Elements[0] is not Value))
+        if (parseResult.Count > 1 || (parseResult.Count == 1 && parseResult[0] is not Value))
         {
-            ParseException exception = new ParseException();
+            ParseException exception = new ParseException(parseResult);
             bool hasUnresolvedTokens = false;
-            for (int i = 0; i < parseResult.Elements.Count; i++)
+            for (int i = 0; i < parseResult.Count; i++)
             {
-                if (parseResult.Elements[i] is not Value)
+                if (parseResult[i] is not Value)
                 {
-                    exception.AddMessage("Unresolved token", parseResult.SourceIndexes[i], parseResult.GetSourceEndIndex(i));
+                    exception.AddMessage("Unresolved token", parseResult.GetSourceStartIndex(i), parseResult.GetSourceEndIndex(i));
                     hasUnresolvedTokens = true;
                 }
             }
@@ -57,13 +67,13 @@ public class ValuePatternMatcher
             if (!hasUnresolvedTokens)
             {
                 // if we only have values in the parse result, but there are more than one
-                exception.AddMessage("Cannot have more than one value in a value expression", parseResult.SourceIndexes[1], parseResult.Source.Length);
+                exception.AddMessage("Cannot have more than one value in a value expression", parseResult.GetSourceStartIndex(1), parseResult.Source.Length);
             }
 
             throw exception;
         }
 
-        return parseResult.Elements[0] as Value;
+        return parseResult.Count > 0 ? parseResult[0] as Value : null;
     }
     
 }

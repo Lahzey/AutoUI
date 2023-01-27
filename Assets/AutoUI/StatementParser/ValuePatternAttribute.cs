@@ -43,3 +43,14 @@ public class ValuePatternAttribute : System.Attribute
         return "$" + typeHierarchy;
     }
 }
+
+[System.AttributeUsage(System.AttributeTargets.Class)]
+public class PatternPriorityAttribute : System.Attribute
+{
+    public readonly int Priority;
+    
+    public PatternPriorityAttribute(int priority)
+    {
+        Priority = priority;
+    }
+}

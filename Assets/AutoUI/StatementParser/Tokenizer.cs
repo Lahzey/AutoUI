@@ -52,16 +52,8 @@ public class Tokenizer
                             parseResult.Add(new IdentifierToken(currentText.ToString()), i);
                             currentText.Clear();
                         }
-                        
-                        // add the whitespace as a token or append it to the previous token if it is a whitespace token
-                        if (parseResult.Elements.Count > 0 && parseResult.Elements[^1] is WhitespaceToken)
-                        {
-                            ((WhitespaceToken)parseResult.Elements[^1]).append(c);
-                            parseResult.SourceIndexes[^1] = i + 1;
-                        } else
-                        {
-                            parseResult.Add(new WhitespaceToken(c), i + 1);
-                        }
+
+                        parseResult.Add(new WhitespaceToken(c), i + 1);
                     }
                     else
                     {
@@ -90,7 +82,7 @@ public class Tokenizer
 
         if (inString)
         {
-            throw new ParseException("Unterminated string", parseResult.SourceIndexes[^1], source.Length);
+            throw new ParseException(parseResult, "Unterminated string", parseResult.GetSourceStartIndex(parseResult.Count - 1), source.Length);
         }
         
         if (currentText.Length > 0) parseResult.Add(new IdentifierToken(currentText.ToString()), source.Length);

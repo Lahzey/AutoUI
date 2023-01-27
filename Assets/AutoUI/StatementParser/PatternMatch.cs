@@ -6,28 +6,30 @@ using System.Text.RegularExpressions;
 public class PatternMatch
 {
 
-    public static bool MatchNext(ParseResult parseResult, Dictionary<string, Type> valueTypePatterns)
+    public static bool MatchNext(ParseResult parseResult, Dictionary<string, Type> valueTypePatterns, List<string> patternOrder)
     {
         // creates a string list of with a placeholder of each element and the joins them into one string
-        string elementsString = string.Join(' ', parseResult.Elements.Select(m => m.GetPlaceholder()));
+        string elementsString = string.Join(' ', parseResult.Select(m => m.GetPlaceholder()));
         
-        // use regex to find all matches of all possible patterns
-        Dictionary<Match, string> allMatches = new Dictionary<Match, string>();
-        foreach (string valueTypePattern in valueTypePatterns.Keys)
+        // use regex to find matches of all possible patterns and keep the one matching the most elements
+        Match match = null;
+        Type matchedType = null;
+        foreach (string valueTypePattern in patternOrder)
         {
             // find each match of valueTypePattern in placeholders using Regex
-            MatchCollection matches = Regex.Matches(elementsString, valueTypePattern);
-            foreach (Match match in matches) allMatches.Add(match, valueTypePattern);
+            Match currentMatch = Regex.Match(elementsString, valueTypePattern);
+            if (currentMatch.Success)
+            {
+                match = currentMatch;
+                matchedType = valueTypePatterns[valueTypePattern];
+                break;
+            }
         }
         
-        if (allMatches.Count ==  0 ) return false; // no matches found
-        
-        // find the match with to most amount of spaces in it, indicating that it matched the most ParsedElements (when multiple patterns could match the same code, the longest pattern should have priority)
-        Match bestMatch = allMatches.Keys.Aggregate((m1, m2) => m1.Value.Count(c => c == ' ') > m2.Value.Count(c => c == ' ') ? m1 : m2);
-        Type matchedType = valueTypePatterns[allMatches[bestMatch]];
+        if (match == null) return false; // no matches found
         
         // create a new PatternMatch object with the best match
-        PatternMatch patternMatch = new PatternMatch(bestMatch, parseResult, elementsString);
+        PatternMatch patternMatch = new PatternMatch(match, parseResult, elementsString);
         
         // replaces the matched elements with a new instance of the matched type
         patternMatch.ReplaceMatchedElements(matchedType);
@@ -89,7 +91,7 @@ public class PatternMatch
                     if (elementsString[currentStringIndex - 1] == ' ') break; // if we just encountered a space, we are done with this element
                 }
 
-                ParsedElement parsedElement = parseResult.Elements[currentMatchedElementIndex];
+                ParsedElement parsedElement = parseResult[currentMatchedElementIndex];
                 if (parsedElement is not SingleCharToken or MultiCharToken) // no need to add these as they are already contained as is in the pattern and do not carry any additional information
                 {
                     matchedElements.Add(parsedElement);

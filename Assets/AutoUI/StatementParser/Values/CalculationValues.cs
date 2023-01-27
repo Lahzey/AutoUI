@@ -151,7 +151,7 @@ public abstract class CalculationValue : Value
     }
 }
 
-[ValuePattern(typeof(Value), @"\+", typeof(Value))]
+[ValuePattern(typeof(Value), @"\+", typeof(Value)), PatternPriority(-1)]
 public class AdditionValue : Value
 {
     public override object Evaluate(DataContext context)
@@ -165,7 +165,7 @@ public class AdditionValue : Value
     public Value Right => (Value) args[1];
 }
 
-[ValuePattern(typeof(Value), @"-", typeof(Value))]
+[ValuePattern(typeof(Value), @"-", typeof(Value)), PatternPriority(-1)]
 public class SubtractionValue : Value
 {
     public override object Evaluate(DataContext context)
@@ -179,7 +179,7 @@ public class SubtractionValue : Value
     public Value Right => (Value) args[1];
 }
 
-[ValuePattern(typeof(Value), @"\*", typeof(Value))]
+[ValuePattern(typeof(Value), @"\*", typeof(Value)), PatternPriority(-1)]
 public class MultiplicationValue : Value
 {
     public override object Evaluate(DataContext context)
@@ -193,7 +193,7 @@ public class MultiplicationValue : Value
     public Value Right => (Value) args[1];
 }
 
-[ValuePattern(typeof(Value), @"\/", typeof(Value))]
+[ValuePattern(typeof(Value), @"\/", typeof(Value)), PatternPriority(-1)]
 public class DivisionValue : Value
 {
     public override object Evaluate(DataContext context)
@@ -207,7 +207,7 @@ public class DivisionValue : Value
     public Value Right => (Value) args[1];
 }
 
-[ValuePattern(typeof(Value), @"%", typeof(Value))]
+[ValuePattern(typeof(Value), @"%", typeof(Value)), PatternPriority(-1)]
 public class ModuloValue : Value
 {
     public override object Evaluate(DataContext context)
@@ -221,7 +221,7 @@ public class ModuloValue : Value
     public Value Right => (Value) args[1];
 }
 
-[ValuePattern(typeof(Value), @"\^", typeof(Value))]
+[ValuePattern(typeof(Value), @"\^", typeof(Value)), PatternPriority(-1)]
 public class PowerValue : Value
 {
     public override object Evaluate(DataContext context)

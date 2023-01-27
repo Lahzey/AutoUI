@@ -3,15 +3,17 @@ using System.Collections.Generic;
 
 public class ParseException : Exception
 {
+    private readonly ParseResult parseResult;
     private readonly List<string> messages = new List<string>();
     private readonly List<int> startPositions = new List<int>();
     private readonly List<int> endPositions = new List<int>();
 
-    public ParseException()
+    public ParseException(ParseResult parseResult)
     {
+        this.parseResult = parseResult;
     }
 
-    public ParseException(string message, int startPosition, int endPosition)
+    public ParseException(ParseResult parseResult, string message, int startPosition, int endPosition) : this(parseResult)
     {
         AddMessage(message, startPosition, endPosition);
     }

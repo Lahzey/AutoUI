@@ -23,7 +23,7 @@ public class DataContext
         data[key.ToLower()] = value;
     }
     
-    public object Get(string key)
+    public object Get(string key, object defaultValue = null)
     {
         key = key.ToLower();
         if (data.ContainsKey(key))
@@ -36,7 +36,7 @@ public class DataContext
         }
         else
         {
-            return null;
+            return defaultValue;
         }
     }
 }

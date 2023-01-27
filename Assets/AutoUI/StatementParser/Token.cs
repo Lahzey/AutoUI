@@ -77,11 +77,11 @@ public class NumberToken : Token
 
     public static void ReplaceTokens(ParseResult parseResult)
     {
-        for (int i = 0; i < parseResult.Elements.Count; i++)
+        for (int i = 0; i < parseResult.Count; i++)
         {
-            if (parseResult.Elements[i] is not IdentifierToken) continue;
+            if (parseResult[i] is not IdentifierToken) continue;
             
-            IdentifierToken identifierToken = (IdentifierToken) parseResult.Elements[i];
+            IdentifierToken identifierToken = (IdentifierToken) parseResult[i];
             
             bool floatingPoint = false;
             Match match = Regex.Match(identifierToken.Identifier, @"^([0-9]+)([lLfFdD]?)$");
@@ -123,26 +123,21 @@ public class NumberToken : Token
                     }
                     break;
                 default:
-                    throw new ParseException(suffix + " is not a valid number suffix", parseResult.SourceIndexes[i], parseResult.GetSourceEndIndex(i));
+                    throw new ParseException(parseResult, suffix + " is not a valid number suffix", parseResult.GetSourceStartIndex(i), parseResult.GetSourceEndIndex(i));
             }
             
-            parseResult.Elements[i] = new NumberToken(number);
+            parseResult.Replace(i, new NumberToken(number));
         }
     }
 }
 
 public class WhitespaceToken : Token
 {
-    private List<char> whitespaces = new List<char>();
+    private char whitespace;
 
     public WhitespaceToken(char whitespace)
     {
-        append(whitespace);
-    }
-    
-    public void append(char whitespace)
-    {
-        whitespaces.Add(whitespace);
+        this.whitespace = whitespace;
     }
 
     public override string ToString()
@@ -160,12 +155,16 @@ public class SingleCharToken : Token
     public static SingleCharToken LPAREN = new SingleCharToken('(');
     public static SingleCharToken RPAREN = new SingleCharToken(')');
     public static SingleCharToken ASSIGN = new SingleCharToken('=');
+    public static SingleCharToken GREATER = new SingleCharToken('>');
+    public static SingleCharToken SMALLER = new SingleCharToken('<');
     public static SingleCharToken AND = new SingleCharToken('&');
     public static SingleCharToken OR = new SingleCharToken('|');
     public static SingleCharToken NOT = new SingleCharToken('!');
     public static SingleCharToken DOT = new SingleCharToken('.');
+    public static SingleCharToken COND = new SingleCharToken('?');
+    public static SingleCharToken ALT = new SingleCharToken(':');
 
-    internal static readonly SingleCharToken[] Values = { PLUS, MINUS, MULT, DIVIDE, LPAREN, RPAREN, ASSIGN, AND, OR, NOT, DOT };
+    internal static readonly SingleCharToken[] Values = { PLUS, MINUS, MULT, DIVIDE, LPAREN, RPAREN, ASSIGN, GREATER, SMALLER, AND, OR, NOT, DOT, COND, ALT };
 
     public readonly char c;
     
@@ -203,8 +202,10 @@ public class MultiCharToken : Token
     public static MultiCharToken NOT_EQUALS = new MultiCharToken(SingleCharToken.NOT, SingleCharToken.ASSIGN);
     public static MultiCharToken LOGICAL_AND = new MultiCharToken(SingleCharToken.AND, SingleCharToken.AND);
     public static MultiCharToken LOGICAL_OR = new MultiCharToken(SingleCharToken.OR, SingleCharToken.OR);
+    public static MultiCharToken GREATER_OR_EQUAL = new MultiCharToken(SingleCharToken.GREATER, SingleCharToken.ASSIGN);
+    public static MultiCharToken SMALLER_OR_EQUAL = new MultiCharToken(SingleCharToken.SMALLER, SingleCharToken.ASSIGN);
     
-    internal static readonly MultiCharToken[] Values = { EQUALS, NOT_EQUALS, LOGICAL_AND, LOGICAL_OR };
+    internal static readonly MultiCharToken[] Values = { EQUALS, NOT_EQUALS, LOGICAL_AND, LOGICAL_OR, GREATER_OR_EQUAL, SMALLER_OR_EQUAL };
     
     private readonly SingleCharToken[] tokens;
 
@@ -217,7 +218,7 @@ public class MultiCharToken : Token
     {
         // create a text representation of this token array so we can easy find and replace tokens with MultiCharTokens using string replace
         string tokenString = "";
-        foreach (Token token in parseResult.Elements) // at this point every matchable is a token
+        foreach (Token token in parseResult) // at this point every matchable is a token
         {
             string tokenStringRepresentation = token.ToString();
             tokenString += token.ToString();

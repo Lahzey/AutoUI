@@ -15,6 +15,6 @@ public class DataStore : DataContext
     
     public T Get<T>(DataKey<T> key)
     {
-        return (T) base.Get(key.Key);
+        return (T) base.Get(key.Key, default(T));
     }
 }
