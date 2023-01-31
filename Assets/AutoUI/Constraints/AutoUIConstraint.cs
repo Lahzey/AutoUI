@@ -9,7 +9,7 @@ public abstract class AutoUIConstraint : MonoBehaviour
     protected UINode node;
     
     protected List<string> valueInputs = new List<string>();
-    protected List<Value> values = new List<Value>();
+    protected List<Expression> values = new List<Expression>();
     protected List<ParseResult> parseResults = new List<ParseResult>();
     protected List<ParseException> parseExceptions = new List<ParseException>();
     
@@ -30,7 +30,7 @@ public abstract class AutoUIConstraint : MonoBehaviour
         valueInputs.Add(valueInput);
         try
         {
-            values.Add(ValuePatternMatcher.Parse(valueInput, out ParseResult parseResult));
+            values.Add(CodeParser.Parse(valueInput, out ParseResult parseResult));
             parseResults.Add(parseResult);
             parseExceptions.Add(null);
         }

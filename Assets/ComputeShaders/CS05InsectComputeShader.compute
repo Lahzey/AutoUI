@@ -1,0 +1,48 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+struct Insect
+{
+    float3 position;
+    float3 direction;
+    float id;
+};
+
+int NumBoids;
+float4 Parameters1, Parameters2, Parameters3;
+float3 Center;
+
+RWStructuredBuffer<Insect> InsectBuffer;
+ConsumeStructuredBuffer<uint> InIndexBuffer;
+AppendStructuredBuffer<Insect> OutInsectBuffer;
+
+#define REPEL_WEIGHT (Parameters1.x)
+#define ALIGN_WEIGHT (Parameters1.y)
+#define COHESION_WEIGHT (Parameters1.z)
+#define MAX_SPEED (Parameters1.w)
+
+#define REPEL_DIST (Parameters2.x)
+#define ALIGN_DIST (Parameters2.y)
+#define COHESION_DIST (Parameters2.z)
+#define MAX_FORCE (Parameters2.w)
+
+#define INVWEIGHT (Parameters3.x)
+#define DELTA_TIME (Parameters3.y)
+#define BOUND (Parameters3.z)
+#define CENTER_WEIGHT (Parameters3.w)
+
+float3 limitVector(float3 v, float max)
+{
+    float len = length(v);
+    if (len > max)
+    {
+        v = v * max / len;
+    }
+    return v;
+}
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    
+}

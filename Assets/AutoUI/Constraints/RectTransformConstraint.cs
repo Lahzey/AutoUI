@@ -18,7 +18,7 @@ public class RectTransformConstraint : AutoUIConstraint
         base.Awake();
         rectTransform = GetComponent<RectTransform>();
         
-        // add all the value inputs
+        // add all the expression inputs
         int i = 0;
         int constraintIndex = 0;
         // order here has to match order in used in update
