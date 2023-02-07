@@ -53,6 +53,26 @@ public class CodeInputDrawer : PropertyDrawer
        
         // draw textfield with color on top of text area
         editor.MoveTextStart();
+        Expression currentExpression = null;
+        int currentExpressionStart = -1;
+        for (int i = 0; i < endpos; i++)
+        {
+            Expression expression = parseResult.ExpressionsAtPositions[i];
+            if (expression != currentExpression)
+            {
+                if (currentExpressionStart >= 0)
+                {
+                    // finish up current expression
+                    StylizedTextField(editor, currentExpressionStart, i - currentExpressionStart, currentExpression);
+                }
+
+                currentExpression = expression;
+                currentExpressionStart = i;
+            }
+        }
+        StylizedTextField(editor, currentExpressionStart, endpos - currentExpressionStart, currentExpression);
+        
+        
         while (editor.cursorIndex != endpos)
         {
    
@@ -81,5 +101,10 @@ public class CodeInputDrawer : PropertyDrawer
         GUI.backgroundColor = backupBackgroundColor;
 
         return input;
+    }
+
+    private static TextField StylizedTextField(TextEditor editor, int startPos, int length, Expression expression)
+    {
+        
     }
 }

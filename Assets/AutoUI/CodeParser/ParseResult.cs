@@ -5,7 +5,7 @@ public class ParseResult : IEnumerable<ParsedElement>
 {
     // used for the inspector so it can know what certain source elements map to
     public readonly string Source;
-    public readonly Dictionary<int, Expression> ValuesAtPositions = new Dictionary<int, Expression>(); // a mapping used by inspector to determine which expression is at a given position
+    public readonly Dictionary<int, Expression> ExpressionsAtPositions = new Dictionary<int, Expression>(); // a mapping used by inspector to determine which expression is at a given position
     
     public bool Success => exception == null;
     public Expression Expression => Success && Elements.Count == 1 ? Elements[0] as Expression : null;
@@ -44,7 +44,7 @@ public class ParseResult : IEnumerable<ParsedElement>
         if (newElement is Expression value && value.CanInspect())
         {
             for (int i = SourceIndexes[startIndex]; i < SourceIndexes[startIndex + 1]; i++)
-                if (!ValuesAtPositions.ContainsKey(i)) ValuesAtPositions[i] = value; // never overwrite existing values, we want the lowest level expression to take priority
+                if (!ExpressionsAtPositions.ContainsKey(i)) ExpressionsAtPositions[i] = value; // never overwrite existing values, we want the lowest level expression to take priority
         }
     }
 
