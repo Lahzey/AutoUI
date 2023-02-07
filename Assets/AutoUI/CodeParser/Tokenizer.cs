@@ -82,7 +82,7 @@ public class Tokenizer
 
         if (inString)
         {
-            throw new ParseException(parseResult, "Unterminated string", parseResult.GetSourceStartIndex(parseResult.Count - 1), source.Length);
+            parseResult.AddExceptionMessage("Unterminated string", parseResult.GetSourceStartIndex(parseResult.Count - 1), source.Length);
         }
         
         if (currentText.Length > 0) parseResult.Add(new IdentifierToken(currentText.ToString()), source.Length);

@@ -7,10 +7,20 @@ public class CodeInput
 {
     // we don't want to serialize parse results, and we also don't need to parse given string more than once
     private static readonly Dictionary<string, ParseResult> parseResults = new Dictionary<string, ParseResult>();
-    private static readonly Dictionary<string, ParseException> parseException = new Dictionary<string, ParseException>();
     
+    private static readonly List<string> currentlyParsing = new List<string>();
+
     public string Input;
-    public bool Success;
+    public ParseResult Result => GetParseResultAwait(Input);
+
+    private static ParseResult GetParseResultAwait(string input)
+    {
+        if (!parseResults.ContainsKey(input))
+        {
+            parseResults.Add(input, CodeParser.TryParse(input));
+        }
+        return parseResults[input];
+    }
     
     
     public static ParseResult GetParseResult(string input)
@@ -21,6 +31,7 @@ public class CodeInput
         }
         else
         {
+            ParseAsync(input);
             return null;
         }
     }
@@ -28,22 +39,17 @@ public class CodeInput
     public static void ParseAsync(string input)
     {
         // start new thread to parse input
+        lock (currentlyParsing)
+        {
+            if (currentlyParsing.Contains(input)) return;
+            currentlyParsing.Add(input);
+        }
         Thread thread = new Thread(() =>
         {
-            ParseResult result = null;
-            ParseException exception = null;
-            try
+            parseResults.Add(input, CodeParser.TryParse(input));
+            lock (currentlyParsing)
             {
-                // result = Parse(input);
-            }
-            catch (ParseException e)
-            {
-                exception = e;
-            }
-            finally
-            {
-                parseResults[input] = result;
-                parseException[input] = exception;
+                currentlyParsing.Remove(input);
             }
         });
         thread.Start();

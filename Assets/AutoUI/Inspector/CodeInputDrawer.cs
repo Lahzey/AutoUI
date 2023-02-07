@@ -7,21 +7,23 @@ using UnityEngine.UIElements;
 public class CodeInputDrawer : PropertyDrawer
 {
     
-    public override VisualElement CreatePropertyGUI(SerializedProperty property)
+    private ParseResult parseResult;
+    
+    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        // string source = property.FindPropertyRelative("Input").stringValue;
-        // ParseResult parseResult = (ParseResult) property.FindPropertyRelative("ParseResult").objectReferenceValue;
-        // input.multiline = true;
-        // input.RegisterValueChangedCallback(evt =>
-        // {
-        //     property.FindPropertyRelative("Input").stringValue = evt.newValue;
-        // });
-        // container.Add(input);
-        // return container;
-        return null;
+        EditorGUI.BeginProperty(position, label, property);
+        
+        // parse current input
+        SerializedProperty sourceProperty = property.FindPropertyRelative("Input");
+        sourceProperty.stringValue = DrawCodeInput(sourceProperty.stringValue);
+
+        string source = sourceProperty.stringValue;
+        if (parseResult == null || source != parseResult.Source) parseResult = CodeInput.GetParseResult(source) ?? parseResult; // will return null if that source has not been parsed yet, in which case we will stick with the old parse result until the new one is ready
+        
+        EditorGUI.EndProperty();
     }
 
-    public static string TextArea(string input, ParseResult parseResult)
+    private string DrawCodeInput(string input)
     {
         // backup color
         Color backupColor = GUI.color;
@@ -58,11 +60,11 @@ public class CodeInputDrawer : PropertyDrawer
             GUI.contentColor = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
            
             // draw each word with a random color
-            // Vector2 pixelselpos = style.GetCursorPixelPosition(editor.position, editor.content, editor.selectIndex);
-            // Vector2 pixelpos = style.GetCursorPixelPosition(editor.position, editor.content, editor.cursorIndex);
-            // GUI.TextField(new Rect(pixelselpos.x - style.border.left, pixelselpos.y - style.border.top, pixelpos.x, pixelpos.y), wordtext);
-            //
-            // editor.MoveToStartOfNextWord();
+            Vector2 pixelselpos = style.GetCursorPixelPosition(editor.position, editor.content, editor.selectIndex);
+            Vector2 pixelpos = style.GetCursorPixelPosition(editor.position, editor.content, editor.cursorIndex);
+            GUI.TextField(new Rect(pixelselpos.x - style.border.left, pixelselpos.y - style.border.top, pixelpos.x, pixelpos.y), wordtext);
+            
+            editor.MoveToStartOfNextWord();
         }
        
         // Reposition selection

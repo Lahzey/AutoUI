@@ -40,11 +40,11 @@ public class CodeParser
         PatternOrder = PatternOrder.OrderByDescending(i => ValueTypePatternPriorities[i]).ToList();
     }
     
-    public static Expression Parse(string valueString, out ParseResult parseResult)
+    public static ParseResult TryParse(string valueString)
     {
         if (ValueTypePatterns == null) init();
 
-        parseResult = Tokenizer.Tokenize(valueString);
+        ParseResult parseResult = Tokenizer.Tokenize(valueString);
 
         while (true)
         {
@@ -53,13 +53,12 @@ public class CodeParser
 
         if (parseResult.Count > 1 || (parseResult.Count == 1 && parseResult[0] is not Expression))
         {
-            ParseException exception = new ParseException(parseResult);
             bool hasUnresolvedTokens = false;
             for (int i = 0; i < parseResult.Count; i++)
             {
                 if (parseResult[i] is not Expression)
                 {
-                    exception.AddMessage("Unresolved token", parseResult.GetSourceStartIndex(i), parseResult.GetSourceEndIndex(i));
+                    parseResult.AddExceptionMessage("Unresolved token", parseResult.GetSourceStartIndex(i), parseResult.GetSourceEndIndex(i));
                     hasUnresolvedTokens = true;
                 }
             }
@@ -67,13 +66,11 @@ public class CodeParser
             if (!hasUnresolvedTokens)
             {
                 // if we only have values in the parse result, but there are more than one
-                exception.AddMessage("Cannot have more than one expression in a expression expression", parseResult.GetSourceStartIndex(1), parseResult.Source.Length);
+                parseResult.AddExceptionMessage("Cannot have more than one expression in a expression expression", parseResult.GetSourceStartIndex(1), parseResult.Source.Length);
             }
-
-            throw exception;
         }
 
-        return parseResult.Count > 0 ? parseResult[0] as Expression : null;
+        return parseResult;
     }
     
 }

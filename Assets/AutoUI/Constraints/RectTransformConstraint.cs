@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 [RequireComponent(typeof(RectTransform))]
 public class RectTransformConstraint : AutoUIConstraint
@@ -6,73 +7,51 @@ public class RectTransformConstraint : AutoUIConstraint
     private RectTransform rectTransform;
     
     // anchor constraints
-    [SerializeField] private string minXConstraint;
-    [SerializeField] private string maxXConstraint;
-    [SerializeField] private string minYConstraint;
-    [SerializeField] private string maxYConstraint;
+    [SerializeField] private CodeInput minXConstraint;
+    [SerializeField] private CodeInput maxXConstraint;
+    [SerializeField] private CodeInput minYConstraint;
+    [SerializeField] private CodeInput maxYConstraint;
+
+    private CodeInput[] constraints => new CodeInput[] { minXConstraint, maxXConstraint, minYConstraint, maxYConstraint };
     
-    private int[] constraintIndexes = new int[4];
+    private Dictionary<string, Expression> expressions = new Dictionary<string, Expression>();
 
     protected override void Awake()
     {
         base.Awake();
         rectTransform = GetComponent<RectTransform>();
         
-        // add all the expression inputs
-        int i = 0;
-        int constraintIndex = 0;
-        // order here has to match order in used in update
-        foreach (string constraint in new string[] {minXConstraint, maxXConstraint, minYConstraint, maxYConstraint})
+        foreach (CodeInput constraint in constraints)
         {
-            if (constraint.Trim().Length > 0)
-            {
-                AddValueInput(constraint);
-                constraintIndexes[i] = constraintIndex;
-                constraintIndex++;
-            } else constraintIndexes[i] = -1;
-
-            i++;
+            ParseResult parseResult = constraint.Result;
+            if (constraint.Input.Length == 0 || parseResult is not { Success: true }) Debug.LogError("Failed to RectTransformConstraint expression '" + constraint.Input + "'.", this);
+            else expressions.Add(constraint.Input, parseResult.Expression);
         }
     }
 
     // Update is called once per frame
     public override void Render(DataContext context)
     {
-        float minX = rectTransform.anchorMin.x;
-        float maxX = rectTransform.anchorMax.x;
-        float minY = rectTransform.anchorMin.y;
-        float maxY = rectTransform.anchorMax.y;
-        
-        if (constraintIndexes[0] >= 0)
+        // Values here must be in the same order as defined by the constraints property. Sorry, I know its not clean :(
+        float[] values = new float[4];
+        values[0] = rectTransform.anchorMin.x;
+        values[1] = rectTransform.anchorMax.x;
+        values[2] = rectTransform.anchorMin.y;
+        values[3] = rectTransform.anchorMax.y;
+
+        for (int i = 0; i < constraints.Length; i++)
         {
-            object value = values[constraintIndexes[0]].Evaluate(context);
-            if (value is short or int or long or float or double) minX = (float)value;
-            else Debug.LogError("Min X Constraint '" + minXConstraint + "' does not evaluate to a number. Result: " + value);
+            CodeInput constraint = constraints[i];
+            if (expressions.ContainsKey(constraint.Input))
+            {
+                object value = expressions[constraint.Input].Evaluate(context);
+                if (value is short or int or long or float or double) values[i] = (float)value;
+                else Debug.LogError("RectTransformConstraint expression '" + constraint.Input + "' does not evaluate to a number. Result: " + value);
+            }
         }
         
-        if (constraintIndexes[1] >= 0)
-        {
-            object value = values[constraintIndexes[1]].Evaluate(context);
-            if (value is short or int or long or float or double) maxX = (float)value;
-            else Debug.LogError("Max X Constraint '" + maxXConstraint + "' does not evaluate to a number. Result: " + value);
-        }
-        
-        if (constraintIndexes[2] >= 0)
-        {
-            object value = values[constraintIndexes[2]].Evaluate(context);
-            if (value is short or int or long or float or double) minY = (float)value;
-            else Debug.LogError("Min Y Constraint '" + minYConstraint + "' does not evaluate to a number. Result: " + value);
-        }
-        
-        if (constraintIndexes[3] >= 0)
-        {
-            object value = values[constraintIndexes[3]].Evaluate(context);
-            if (value is short or int or long or float or double) maxY = (float)value;
-            else Debug.LogError("Max Y Constraint '" + maxYConstraint + "' does not evaluate to a number. Result: " + value);
-        }
-        
-        rectTransform.anchorMin = new Vector2(minX, minY);
-        rectTransform.anchorMax = new Vector2(maxX, maxY);
+        rectTransform.anchorMin = new Vector2(values[0], values[2]);
+        rectTransform.anchorMax = new Vector2(values[1], values[3]);
     }
     
     

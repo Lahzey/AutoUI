@@ -6,9 +6,14 @@ public class ParseResult : IEnumerable<ParsedElement>
     // used for the inspector so it can know what certain source elements map to
     public readonly string Source;
     public readonly Dictionary<int, Expression> ValuesAtPositions = new Dictionary<int, Expression>(); // a mapping used by inspector to determine which expression is at a given position
+    
+    public bool Success => exception == null;
+    public Expression Expression => Success && Elements.Count == 1 ? Elements[0] as Expression : null;
 
     private readonly List<ParsedElement> Elements = new List<ParsedElement>();
     private readonly List<int> SourceIndexes = new List<int>(); // the start indexes of the elements in the source
+    
+    private ParseException exception = null;
     
     public ParseResult(string source)
     {
@@ -42,6 +47,13 @@ public class ParseResult : IEnumerable<ParsedElement>
                 if (!ValuesAtPositions.ContainsKey(i)) ValuesAtPositions[i] = value; // never overwrite existing values, we want the lowest level expression to take priority
         }
     }
+
+    public void AddExceptionMessage(string message, int startPosition, int endPosition)
+    {
+        if (exception == null) exception = new ParseException();
+        
+        exception.AddMessage(message, startPosition, endPosition);
+    }
     
     public int GetSourceStartIndex(int elementIndex)
     {
@@ -54,7 +66,7 @@ public class ParseResult : IEnumerable<ParsedElement>
     }
     
     public int Count => Elements.Count;
-    
+
     public ParsedElement this[int index] => Elements[index];
 
     public IEnumerator<ParsedElement> GetEnumerator()

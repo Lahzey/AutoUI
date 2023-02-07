@@ -123,7 +123,8 @@ public class NumberToken : Token
                     }
                     break;
                 default:
-                    throw new ParseException(parseResult, suffix + " is not a valid number suffix", parseResult.GetSourceStartIndex(i), parseResult.GetSourceEndIndex(i));
+                    parseResult.AddExceptionMessage(suffix + " is not a valid number suffix", parseResult.GetSourceStartIndex(i), parseResult.GetSourceEndIndex(i));
+                    return;
             }
             
             parseResult.Replace(i, new NumberToken(number));

@@ -6,20 +6,25 @@ public class ImageConstraint : AutoUIConstraint
 {
     private Image imageComponent;
 
-    [SerializeField] private string image;
+    [SerializeField] private CodeInput imageConstraint;
+    
+    private Expression imageExpression;
 
     protected override void Awake()
     {
         base.Awake();
         imageComponent = GetComponent<Image>();
-        AddValueInput(image);
+        
+        ParseResult parseResult = imageConstraint.Result;
+        imageExpression = parseResult is { Success: true } ? parseResult.Expression : null;
+        if (imageExpression == null) Debug.LogError("Failed to parse image expression '" + imageConstraint.Input + "', defaulting to null.", this);
     }
 
     public override void Render(DataContext context)
     {
         try
         {
-            object image = values[0].Evaluate(context);
+            object image = imageExpression?.Evaluate(context) ?? null;
             switch (image)
             {
                 case null:

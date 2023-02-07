@@ -5,14 +5,19 @@ using UnityEngine;
 public class ShowConstraint : AutoUIConstraint
 {
 
-    [SerializeField] private string condition;
+    [SerializeField] private CodeInput conditionConstraint;
     [SerializeField] private bool disableAtRuntime; // since this constraint works even if disabled, we need another way of disabling it
+    
+    private Expression conditionExpression;
 
 
     protected override void Awake()
     {
         base.Awake();
-        AddValueInput(condition);
+        
+        ParseResult parseResult = conditionConstraint.Result;
+        conditionExpression = parseResult is { Success: true } ? parseResult.Expression : null;
+        if (conditionExpression == null) Debug.LogError("Failed to parse condition expression '" + conditionConstraint.Input + "', defaulting to true.", this);
     }
 
     public override void Render(DataContext context)
@@ -20,11 +25,11 @@ public class ShowConstraint : AutoUIConstraint
         if (disableAtRuntime) return;
         try
         {
-            object result = values[0].Evaluate(context);
+            object result = conditionExpression?.Evaluate(context) ?? true;
             if (result == null)
                 gameObject.SetActive(false);
-            else if (result is bool)
-                gameObject.SetActive((bool) result);
+            else if (result is bool b)
+                gameObject.SetActive(b);
             else
                 Debug.LogError("Show condition not a boolean: " + result, this);
         }

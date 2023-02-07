@@ -6,9 +6,12 @@ using UnityEngine;
 
 public class ForEachConstraint : AutoUIConstraint
 {
+    private static readonly List<object> EMPTY_LIST = new List<object>();
 
     [SerializeField] private string varName;
-    [SerializeField] private string collection;
+    [SerializeField] private CodeInput collectionConstraint;
+    
+    private Expression collectionExpression;
     
     private GameObject[] childTemplates; // the initial children on startup, these game objects will remain disabled so we can use them as templates (a set of these for each element in the list)
     private List<GameObject> children = new List<GameObject>();
@@ -20,7 +23,9 @@ public class ForEachConstraint : AutoUIConstraint
     {
         base.Awake();
         
-        AddValueInput(collection);
+        ParseResult parseResult = collectionConstraint.Result;
+        collectionExpression = parseResult is { Success: true } ? parseResult.Expression : null;
+        if (collectionExpression == null) Debug.LogError("Failed to parse collection expression '" + collectionConstraint.Input + "', defaulting to empty list.", this);
 
         childTemplates = new GameObject[gameObject.transform.childCount];
         for (int i = 0; i < gameObject.transform.childCount; i++)
@@ -76,15 +81,15 @@ public class ForEachConstraint : AutoUIConstraint
     {
         try
         {
-            object result = values[0].Evaluate(DataStore.Instance);
-            if (result is not IEnumerable)
+            object result = collectionExpression?.Evaluate(context) ?? EMPTY_LIST;
+            if (result is not IEnumerable enumerable)
             {
                 Debug.LogError("Collection must be of type ICollection: " + result, this);
                 return;
             }
 
             collectionContents.Clear();
-            foreach (object element in (IEnumerable) result) collectionContents.Add(element);
+            foreach (object element in enumerable) collectionContents.Add(element);
             int countDiff = collectionContents.Count * childTemplates.Length - children.Count;
             switch (countDiff)
             {
