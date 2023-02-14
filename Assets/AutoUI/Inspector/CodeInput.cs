@@ -10,35 +10,43 @@ public class CodeInput
     
     private static readonly List<string> currentlyParsing = new List<string>();
 
-    public string Input;
+    public string Input = "";
     public ParseResult Result => GetParseResultAwait(Input);
 
+    /// <summary>
+    /// Get the parse result for a given input string, or wait for it to be parsed if it's not already parsed.<br/>
+    /// THIS WILL BLOCK NOT ONLY THE CURRENT THREAD, BUT ALSO ANY OTHER THREAD TRYING TO GET A PARSE RESULT, DO NOT USE FROM UI!
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
     private static ParseResult GetParseResultAwait(string input)
     {
-        if (!parseResults.ContainsKey(input))
+        lock (parseResults)
         {
-            parseResults.Add(input, CodeParser.TryParse(input));
+            if (!parseResults.ContainsKey(input))
+            {
+                parseResults.Add(input, CodeParser.TryParse(input));
+            }
+            return parseResults[input];
         }
-        return parseResults[input];
     }
     
     
     public static ParseResult GetParseResult(string input)
     {
-        if (parseResults.ContainsKey(input))
+        lock (parseResults)
         {
-            return parseResults[input];
+            if (parseResults.ContainsKey(input))
+            {
+                return parseResults[input];
+            }
         }
-        else
-        {
-            ParseAsync(input);
-            return null;
-        }
+        ParseAsync(input);
+        return null;
     }
 
     public static void ParseAsync(string input)
     {
-        // start new thread to parse input
         lock (currentlyParsing)
         {
             if (currentlyParsing.Contains(input)) return;
@@ -46,7 +54,11 @@ public class CodeInput
         }
         Thread thread = new Thread(() =>
         {
-            parseResults.Add(input, CodeParser.TryParse(input));
+            ParseResult result = CodeParser.TryParse(input);
+            lock (parseResults)
+            {
+                if (!parseResults.ContainsKey(input)) parseResults.Add(input, result); // the contains key check should be redundant, but just in case
+            }
             lock (currentlyParsing)
             {
                 currentlyParsing.Remove(input);

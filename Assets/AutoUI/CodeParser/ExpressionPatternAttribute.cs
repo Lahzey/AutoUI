@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 [System.AttributeUsage(System.AttributeTargets.Class)]
 public class ExpressionPatternAttribute : System.Attribute
 {
+    public bool AutoSpace { get; set; } = true;
     private readonly object[] patternParts;
 
     public ExpressionPatternAttribute(params object[] patternParts)
@@ -17,15 +18,15 @@ public class ExpressionPatternAttribute : System.Attribute
         List<string> pattern = new List<string>();
         foreach (object patternPart in patternParts)
         {
-            if (patternPart is Type) pattern.Add(TypeOfPattern((Type) patternPart));
-            else if (patternPart is string) pattern.Add((string)patternPart);
+            if (patternPart is Type type) pattern.Add(TypeOfPattern(type));
+            else if (patternPart is string text) pattern.Add(text);
             else throw new ArgumentException("ExpressionPatternAttribute only accepts strings and types as arguments.");
         }
 
-        return string.Join(" ", pattern);
+        return string.Join(AutoSpace ? " " : "", pattern);
     }
 
-    private static string TypeOfPattern(Type type)
+    public static string TypeOfPattern(Type type)
     {
         // return a regex pattern that matches the type plus any additional type names after a trailing '>' that would denote a subtype
         return Regex.Escape(TypeOfPlaceholder(type)) + @"(?:>[a-zA-Z0-9_]+)?";

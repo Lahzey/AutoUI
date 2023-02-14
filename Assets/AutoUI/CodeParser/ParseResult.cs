@@ -7,14 +7,14 @@ public class ParseResult : IEnumerable<ParsedElement>
     public readonly string Source;
     public readonly Dictionary<int, Expression> ExpressionsAtPositions = new Dictionary<int, Expression>(); // a mapping used by inspector to determine which expression is at a given position
     
-    public bool Success => exception == null;
+    public bool Success => Exception == null;
     public Expression Expression => Success && Elements.Count == 1 ? Elements[0] as Expression : null;
 
     private readonly List<ParsedElement> Elements = new List<ParsedElement>();
     private readonly List<int> SourceIndexes = new List<int>(); // the start indexes of the elements in the source
-    
-    private ParseException exception = null;
-    
+
+    public ParseException Exception { get; private set; }
+
     public ParseResult(string source)
     {
         Source = source;
@@ -41,18 +41,18 @@ public class ParseResult : IEnumerable<ParsedElement>
         SourceIndexes.RemoveRange(startIndex + 1, count - 1);
         
         // storing the positions of values index by index like this is inefficient, but only has to be done on parse and should save time later
-        if (newElement is Expression value && value.CanInspect())
+        if (newElement is Expression value)
         {
             for (int i = SourceIndexes[startIndex]; i < SourceIndexes[startIndex + 1]; i++)
-                if (!ExpressionsAtPositions.ContainsKey(i)) ExpressionsAtPositions[i] = value; // never overwrite existing values, we want the lowest level expression to take priority
+                if (value.HidesInspectedChildren() || !ExpressionsAtPositions.ContainsKey(i)) ExpressionsAtPositions[i] = value; // never overwrite existing values, we want the lowest level expression to take priority
         }
     }
 
     public void AddExceptionMessage(string message, int startPosition, int endPosition)
     {
-        if (exception == null) exception = new ParseException();
+        if (Exception == null) Exception = new ParseException();
         
-        exception.AddMessage(message, startPosition, endPosition);
+        Exception.AddMessage(message, startPosition, endPosition);
     }
     
     public int GetSourceStartIndex(int elementIndex)

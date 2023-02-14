@@ -44,12 +44,9 @@ public class DataKeyBase
 
 public class DataKey<T> : DataKeyBase
 {
-
-    public readonly string Key;
     
     public DataKey(string key) : base (typeof(T), key)
     {
-        Key = key;
     }
 }
 

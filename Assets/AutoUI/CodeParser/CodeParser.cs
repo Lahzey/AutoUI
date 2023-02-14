@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 public class CodeParser
 {
+    private static readonly object INIT_LOCK = new object();
     
     private static Dictionary<string, Type> ValueTypePatterns = null;
-    private static Dictionary<string, int> ValueTypePatternPriorities = new Dictionary<string, int>();
+    private static Dictionary<string, int> ValueTypePatternPriorities = null;
     private static List<string> PatternOrder;
     private static string uid = Guid.NewGuid().ToString();
 
@@ -18,6 +20,7 @@ public class CodeParser
             where type.IsSubclassOf(typeof(Expression))
             select type;
         ValueTypePatterns = new Dictionary<string, Type>();
+        ValueTypePatternPriorities = new Dictionary<string, int>();
         foreach (Type type in subclasses)
         {
             // get ValuePattern attribute from type
@@ -42,7 +45,10 @@ public class CodeParser
     
     public static ParseResult TryParse(string valueString)
     {
-        if (ValueTypePatterns == null) init();
+        lock (INIT_LOCK)
+        {
+            if (ValueTypePatterns == null) init();
+        }
 
         ParseResult parseResult = Tokenizer.Tokenize(valueString);
 

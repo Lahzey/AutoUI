@@ -63,7 +63,7 @@ public class UINode
         if (constraint == showConstraint) showConstraint = null;
         else constraints.Remove(constraint);
         
-        if (constraints.Count == 0 && showConstraint == null)
+        if (constraints.Count == 0 && showConstraint is null)
         {
             RenderManager renderManager = RenderManager.Default;
             renderManager.RemoveUINode(this);
@@ -82,7 +82,7 @@ public class UINode
 
     public void Render(DataContext context)
     {
-        if (showConstraint != null) showConstraint.Render(context);
+        if (showConstraint is not null) showConstraint.Render(context); // do not use null propagation here, we do NOT want to use null equality checks
 
         if (!GameObject.activeInHierarchy) return; // not rendering hidden constraints
         

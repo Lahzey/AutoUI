@@ -320,10 +320,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f0b9b325cb74a9089a80db512bf4925, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minXConstraint: 
-  maxXConstraint: player.currentHealth/player.maxHealth
-  minYConstraint: 
-  maxYConstraint: 
+  minXConstraint:
+    Input: 
+  maxXConstraint:
+    Input: player.currentHealth/(player.maxHealth)
+  minYConstraint:
+    Input: 
+  maxYConstraint:
+    Input: 
 --- !u!114 &222290614
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -822,7 +826,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dea6c9c64fc64346b030f286033de50f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  textConstraint: item.Value>1?item.Value:""
+  textConstraint:
+    Input: item.Value
 --- !u!114 &1034255590
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1137,7 +1142,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0c3f7c0bf7d14b51bac700074847559c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  image: item.Key.sprite
+  imageConstraint:
+    Input: item.Key.sprite
 --- !u!1 &1270289558
 GameObject:
   m_ObjectHideFlags: 0
@@ -1310,7 +1316,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   varName: item
-  collection: player.inventory
+  collectionConstraint:
+    Input: player.inventory
 --- !u!114 &1307837591
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1323,7 +1330,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c32fa0b3928a4e24ae90f05465708757, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  condition: showInventory
+  conditionConstraint:
+    Input: showInventory
   disableAtRuntime: 0
 --- !u!114 &1307837592
 MonoBehaviour:
@@ -1400,7 +1408,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dea6c9c64fc64346b030f286033de50f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  textConstraint: item.Key.name
+  textConstraint:
+    Input: item.Key.name
 --- !u!114 &1337419471
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1549,7 +1558,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dea6c9c64fc64346b030f286033de50f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  textConstraint: player.name
+  textConstraint:
+    Input: player.name
 --- !u!114 &1825235212
 MonoBehaviour:
   m_ObjectHideFlags: 0

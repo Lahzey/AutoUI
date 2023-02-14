@@ -61,7 +61,6 @@ public class ForEachConstraint : AutoUIConstraint
                 bool startsWith = distantChildHierarchyPath.StartsWith(directChildHierarchyPath);
                 if (startsWith)
                 {
-                    Debug.Log($"{distantChildHierarchyPath} starts with {directChildHierarchyPath}");
                     childIndices[distantChildHierarchyPath] = i;
                     childIndex = i;
                     break;

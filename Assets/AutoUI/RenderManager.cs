@@ -23,12 +23,13 @@ public class RenderManager : MonoBehaviour
 
     private void Update()
     {
-        storedDeltaTime += Time.unscaledDeltaTime;
-        if (storedDeltaTime >= renderInterval)
-        {
-            storedDeltaTime = 0f;
-            Render();
-        }
+        Render();
+        // storedDeltaTime += Time.unscaledDeltaTime;
+        // if (storedDeltaTime >= renderInterval)
+        // {
+        //     storedDeltaTime = 0f;
+        //     Render();
+        // }
     }
 
     private void Render()

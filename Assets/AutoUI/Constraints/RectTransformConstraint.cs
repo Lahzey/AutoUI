@@ -13,19 +13,23 @@ public class RectTransformConstraint : AutoUIConstraint
     [SerializeField] private CodeInput maxYConstraint;
 
     private CodeInput[] constraints => new CodeInput[] { minXConstraint, maxXConstraint, minYConstraint, maxYConstraint };
-    
-    private Dictionary<string, Expression> expressions = new Dictionary<string, Expression>();
+
+    private Expression[] expressions;
 
     protected override void Awake()
     {
         base.Awake();
         rectTransform = GetComponent<RectTransform>();
-        
-        foreach (CodeInput constraint in constraints)
+
+        CodeInput[] constraints = this.constraints;
+        expressions = new Expression[constraints.Length];
+        for (int i = 0; i < constraints.Length; i++)
         {
+            CodeInput constraint = constraints[i];
+            if (constraint.Input.Length == 0) continue;
             ParseResult parseResult = constraint.Result;
-            if (constraint.Input.Length == 0 || parseResult is not { Success: true }) Debug.LogError("Failed to RectTransformConstraint expression '" + constraint.Input + "'.", this);
-            else expressions.Add(constraint.Input, parseResult.Expression);
+            if (parseResult is not {Success: true}) Debug.LogError("Failed to parse RectTransformConstraint expression '" + constraint.Input + "'.", this);
+            else expressions[i] = parseResult.Expression;
         }
     }
 
@@ -39,14 +43,15 @@ public class RectTransformConstraint : AutoUIConstraint
         values[2] = rectTransform.anchorMin.y;
         values[3] = rectTransform.anchorMax.y;
 
-        for (int i = 0; i < constraints.Length; i++)
+        
+        for (int i = 0; i < expressions.Length; i++)
         {
-            CodeInput constraint = constraints[i];
-            if (expressions.ContainsKey(constraint.Input))
+            Expression expression = expressions[i];
+            if (expression != null)
             {
-                object value = expressions[constraint.Input].Evaluate(context);
+                object value = expression.Evaluate(context);
                 if (value is short or int or long or float or double) values[i] = (float)value;
-                else Debug.LogError("RectTransformConstraint expression '" + constraint.Input + "' does not evaluate to a number. Result: " + value);
+                else Debug.LogError("RectTransformConstraint expression '" + constraints[i].Input + "' does not evaluate to a number. Result: " + value);
             }
         }
         
