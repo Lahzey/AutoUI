@@ -14,6 +14,7 @@ public class CodeInputDrawer : PropertyDrawer
     private GUIContent textContent;
     private Vector2 scrollPosition = Vector2.zero;
     private float lastWidth = 0;
+    private float lastLabelHeight;
 
     private GUIStyle codeAreaStyle = new GUIStyle(GUI.skin.textArea);
     private GUIStyle codeSegmentStyle = new GUIStyle(GUI.skin.box);
@@ -43,6 +44,10 @@ public class CodeInputDrawer : PropertyDrawer
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         EditorGUI.BeginProperty(position, label, property);
+
+        lastLabelHeight = GUI.skin.label.CalcSize(label).y;
+        GUI.Label(new Rect(position.position, new Vector2(position.width, lastLabelHeight)), label);
+        position.y += lastLabelHeight;
 
         // parse current input
         SerializedProperty sourceProperty = property.FindPropertyRelative("Input");
@@ -127,14 +132,14 @@ public class CodeInputDrawer : PropertyDrawer
         Vector2 contentSize = codeAreaStyle.CalcSize(textContent);
         contentSize.y += BOTTOM_INPUT_PADDING;
         float height = Mathf.Min(contentSize.y, MAX_INPUT_HEIGHT);
-        return contentSize.x > lastWidth ? height + GUI.skin.horizontalScrollbar.fixedHeight : height;
+        return (contentSize.x > lastWidth ? height + GUI.skin.horizontalScrollbar.fixedHeight : height) + lastLabelHeight;
     }
 
     private void StylizedTextField(string text, Rect bounds, int startPos, int endPos, Expression expression)
     {
         startPos = Mathf.Min(startPos, text.Length - 1);
         endPos = Mathf.Min(endPos, text.Length);
-        GUI.contentColor = GetExpressionColor(expression); // TODO: color based on expression type
+        GUI.contentColor = GetExpressionColor(expression);
 
         string substring = text.Substring(startPos, endPos - startPos);
         string[] lines = substring.Split('\n');
