@@ -1,4 +1,5 @@
-﻿using Unity.VisualScripting;
+﻿using System.Linq;
+using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 
@@ -51,7 +52,8 @@ public class CodeInputDrawer : PropertyDrawer
 
         // parse current input
         SerializedProperty sourceProperty = property.FindPropertyRelative("Input");
-        sourceProperty.stringValue = DrawCodeInput(sourceProperty.stringValue, position);
+        // sourceProperty.stringValue = DrawCodeInput(sourceProperty.stringValue, position);
+        sourceProperty.stringValue = CodeArea.ScrolledArea(position, sourceProperty.stringValue, parseResult, GUI.skin.label);
 
         string source = sourceProperty.stringValue;
         if (parseResult == null || source != parseResult.Source) parseResult = CodeInput.GetParseResult(source) ?? parseResult; // will return null if that source has not been parsed yet, in which case we will stick with the old parse result until the new one is ready
