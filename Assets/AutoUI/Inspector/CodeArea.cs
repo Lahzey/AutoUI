@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using UnityEditor;
 using UnityEngine;
@@ -9,15 +10,21 @@ using Vector4 = UnityEngine.Vector4;
 
 public class CodeArea
 {
+    private static readonly string EnglishCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~ \t\n\r";
+    
     private static readonly Color BorderColor = new Color(0, 0, 0, 1);
     private static readonly Color BorderColorHover = new Color(0.7f, 0.7f, 0.7f, 1);
     private static readonly Color BorderColorSelected = new Color(0.23f, 0.47f, 0.73f, 1);
     private static readonly Color BackgroundColor = new Color(0.165f, 0.165f, 0.165f, 1);
     private static readonly Color SelectionColor = new Color(0.23f, 0.47f, 0.73f, 1);
     
+    private static readonly Vector2 Padding = new Vector2(5, 2); // left, top and right, bottom both have this padding
+    
+    // cached assets
     private static Texture2D SquigglyLineTexture = null;
-    private static Dictionary<int, Texture2D> CircleTextures = new Dictionary<int, Texture2D>(); // caching circle textures by radius, all of them are white
-
+    private static Dictionary<int, Texture2D> CircleTextures = new Dictionary<int, Texture2D>(); // <radius, texture> all of them are white
+    private static Dictionary<int, Font> ConsolasFonts = new Dictionary<int, Font>(); // <size, font>
+    
     private static GUIStyle CodeSegmentStyle;
 
     static CodeArea()
@@ -35,53 +42,62 @@ public class CodeArea
         bool hasFocus = GUIUtility.keyboardControl == controlId;
         CodeAreaInfo state = (CodeAreaInfo) GUIUtility.GetStateObject(typeof(CodeAreaInfo), controlId);
         
-        EditorGUIUtility.AddCursorRect(position, MouseCursor.Text);
-        
-        Action autoCompleteCallback = null;
-         
-        #region InputHandling
+        CodeSegmentStyle.font = GetConsolasFont(style.fontSize > 0 ? style.fontSize : style.font.fontSize);
+        CodeSegmentStyle.fontSize = CodeSegmentStyle.font.fontSize; // just to be sure
+        state.ContentStyle = CodeSegmentStyle;
+        state.SetLines(input.Split('\n'));
 
+        Action autoCompleteCallback = null; // TODO autocomplete
+        Rect inputBounds = new Rect(position.position + Padding, position.size - Padding * 2);
         switch (Event.current.GetTypeForControl(controlId))
         {
             case EventType.KeyDown:
-                input = HandleKeyDownEvent(input, state, autoCompleteCallback);
+                string newInput = HandleKeyDownEvent(input, state, autoCompleteCallback);
+                if (newInput != input) GUI.changed = true;
+                input = newInput;
                 break;
             case EventType.MouseDown:
-                if (!hasFocus && position.Contains(Event.current.mousePosition))
+                if (!hasFocus && inputBounds.Contains(Event.current.mousePosition))
                 {
                     GUIUtility.keyboardControl = controlId;
-                    hasFocus = true;
-                } else if (hasFocus && !position.Contains(Event.current.mousePosition))
+                } else if (hasFocus && !inputBounds.Contains(Event.current.mousePosition))
                 {
                     GUIUtility.keyboardControl = 0;
-                    hasFocus = false;
                 }
 
-                state.SetCursor(state.GetTextIndexAtPosition(Event.current.mousePosition - position.position));
+                state.SetCursor(state.GetTextIndexAtPosition(Event.current.mousePosition - inputBounds.position));
                 Event.current.Use();
                 break;
             case EventType.MouseDrag:
-                state.SelectionEnd = state.GetTextIndexAtPosition(Event.current.mousePosition - position.position);
+                state.SelectionEndInternal = state.GetTextIndexAtPosition(Event.current.mousePosition - inputBounds.position);
                 Event.current.Use();
+                break;
+            case EventType.Repaint:
+                Draw(position, input, parseResult, hasFocus, state, style);
                 break;
         }
         
-        #endregion
+        return input;
+    }
+
+    private static void Draw(Rect position, string input, ParseResult parseResult, bool hasFocus, CodeAreaInfo state, GUIStyle style)
+    {
         
         FillRoundRect(position, BackgroundColor, 5);
         DrawRoundRect(position, hasFocus ? BorderColorSelected : BorderColor, 2, 5);
-        Rect codeAreaBounds = new Rect(Vector2.zero, GetCodeAreaSize(input, position.width, style));
-        state.scrollPosition = GUI.BeginScrollView(new Rect(position.x + 5, position.y + 5, position.width - 10, position.height - 10), state.scrollPosition, codeAreaBounds);
+        Rect codeAreaBounds = new Rect(Vector2.zero, GetCodeAreaSize(state, position.width));
+        state.scrollPosition = GUI.BeginScrollView(position, state.scrollPosition, codeAreaBounds);
+        Rect contentBounds = new Rect(codeAreaBounds.position + Padding, codeAreaBounds.size - Padding * 2);
+        GUI.BeginGroup(contentBounds);
+        
+        EditorGUIUtility.AddCursorRect(new Rect(Vector2.zero, contentBounds.size), MouseCursor.Text);
         
         #region Selection
         if (hasFocus)
         {
-            if (state.SelectionStart == state.SelectionEnd)
-            {
-                Vector2 selectionStartPosition = state.GetPositionAtTextIndex(state.SelectionStart);
-                DrawLine(selectionStartPosition, selectionStartPosition + new Vector2(0, state.ContentStyle.lineHeight), Color.white, 1);
-            }
-            else
+            Vector2 cursorPosition = state.GetPositionAtTextIndex(state.SelectionEndInternal);
+            DrawLine(cursorPosition, cursorPosition + new Vector2(0, state.LineHeight), Color.white, 1);
+            if (state.SelectionStart != state.SelectionEnd)
             {
                 string selection = input.Substring(state.SelectionStart, state.SelectionEnd - state.SelectionStart);
                 string[] lines = selection.Split('\n');
@@ -91,7 +107,7 @@ public class CodeArea
                 {
                     Vector2 selectionStartPosition = state.GetPositionAtTextIndex(index);
                     Vector2 selectionEndPosition = state.GetPositionAtTextIndex(index + line.Length);
-                    GUI.DrawTexture(new Rect(selectionStartPosition, new Vector2(selectionEndPosition.x - selectionStartPosition.x, state.ContentStyle.lineHeight)), EditorGUIUtility.whiteTexture);
+                    GUI.DrawTexture(new Rect(selectionStartPosition, new Vector2(selectionEndPosition.x - selectionStartPosition.x, state.LineHeight)), EditorGUIUtility.whiteTexture);
                     index += line.Length + 1;
                 }
             } 
@@ -112,35 +128,41 @@ public class CodeArea
         #endregion
 
         #region CodeElements
-
-        state.ResetContentCache(CodeSegmentStyle);
-        Rect elementPosition = new Rect(Vector2.zero, Vector2.zero);
-        Expression currentExpression = null;
-        int currentExpressionStart = 0;
-        for (int i = 0; i < input.Length; i++)
+        int charCountBeforeLine = 0;
+        for (int lineIndex = 0; lineIndex < state.Lines.Length; lineIndex++)
         {
-            Expression expression = null;
-            parseResult?.ExpressionsAtPositions?.TryGetValue(i, out expression);
-
-            if (expression != currentExpression)
+            Expression currentExpression = null;
+            int currentExpressionStart = 0;
+            int y = lineIndex * state.LineHeight;
+            for (int indexInLine = 0; indexInLine < state.LineLengths[lineIndex]; indexInLine++)
             {
-                if (currentExpressionStart < i)
+                Expression expression = null;
+                parseResult?.ExpressionsAtPositions?.TryGetValue(indexInLine, out expression);
+
+                if (expression != currentExpression)
                 {
-                    // finish up current expression
-                    StylizedTextField(input, currentExpressionStart, i, ref elementPosition, currentExpression, state);
+                    if (currentExpressionStart < indexInLine)
+                    {
+                        // finish up current expression
+                        StylizedTextField(new Vector2(currentExpressionStart * state.CharWidth, y), state.Lines[lineIndex].Substring(currentExpressionStart, indexInLine - currentExpressionStart), currentExpression, state);
+                    }
+
+                    currentExpression = expression;
+                    currentExpressionStart = indexInLine;
                 }
-
-                currentExpression = expression;
-                currentExpressionStart = i;
             }
+            StylizedTextField(new Vector2(currentExpressionStart * state.CharWidth, y), state.Lines[lineIndex].Substring(currentExpressionStart, state.LineLengths[lineIndex] - currentExpressionStart), currentExpression, state);
+            charCountBeforeLine += state.LineLengths[lineIndex] + 1; // +1 for the newline character
         }
-
-        if (currentExpressionStart < input.Length) StylizedTextField(input, currentExpressionStart, input.Length, ref elementPosition, currentExpression, state);
-
         #endregion
 
+        GUI.EndGroup();
         GUI.EndScrollView();
-        return input;
+    }
+
+    private void HandleInput(CodeAreaInfo state, int controlId)
+    {
+        
     }
 
     private static string HandleKeyDownEvent(string input, CodeAreaInfo state, Action autoCompleteCallback)
@@ -178,14 +200,56 @@ public class CodeArea
             case KeyCode.Return: // enter
             case KeyCode.Tab:
                 if (autoCompleteCallback != null) autoCompleteCallback();
-                else input = ReplaceSelection(input, state, Event.current.character.ToString());
+                else input = ReplaceSelection(input, state, Event.current.keyCode == KeyCode.Return ? "\n" : "\t");
+                Event.current.Use();
+                break;
+            case KeyCode.LeftArrow:
+            case KeyCode.RightArrow:
+                int direction = Event.current.keyCode == KeyCode.LeftArrow ? -1 : 1;
+                if (Event.current.shift) state.SelectionEndInternal += direction;
+                else state.SetCursor(state.SelectionEndInternal + direction);
+                state.ClampSelection(input.Length);
+                Event.current.Use();
+                break;
+            case KeyCode.UpArrow:
+            case KeyCode.DownArrow:
+                if (1 == 0) // TODO: if currently showing autocomplete
+                {
+                    
+                }
+                else
+                {
+                    bool up = Event.current.keyCode == KeyCode.UpArrow;
+                    string[] lines = input.Split('\n');
+                    int index = 0;
+                    for (int i = 0; i < lines.Length; i++)
+                    {
+                        string line = lines[i];
+                        if (index + line.Length >= state.SelectionEndInternal)
+                        {
+                            int lineIndex = state.SelectionEndInternal - index;
+                            int targetLine = Math.Clamp(up ? lineIndex - 1 : lineIndex + 1, 0, lines.Length - 1);
+                            if (targetLine == i) break;
+
+                            int targetLineIndex = Math.Clamp(lineIndex, 0, lines[targetLine].Length - 1);
+                            int targetLineStartIndex = up ? index - lines[targetLine].Length : index + line.Length;
+                            state.SetCursor(targetLineStartIndex + targetLineIndex);
+                            state.ClampSelection(input.Length); // just in case, should not be necessary
+                            break;
+                        }
+                        index += line.Length + 1;
+                    }
+                }
+                Event.current.Use();
                 break;
             case KeyCode.V:
                 input = ReplaceSelection(input, state, Event.current.control ? GUIUtility.systemCopyBuffer : Event.current.character.ToString());
+                Event.current.Use();
                 break;
             case KeyCode.C:
                 if (Event.current.control) GUIUtility.systemCopyBuffer = input.Substring(state.SelectionStart, state.SelectionEnd - state.SelectionStart);
                 else input = ReplaceSelection(input, state, Event.current.character.ToString());
+                Event.current.Use();
                 break;
             default:
                 char c = Event.current.character;
@@ -208,34 +272,18 @@ public class CodeArea
         return input;
     }
 
-    private static Vector2 GetCodeAreaSize(string input, float minWidth, GUIStyle style)
+    private static Vector2 GetCodeAreaSize(CodeAreaInfo state, float minWidth)
     {
-        Vector4 padding = GetCodeAreaPadding(style);
-        Vector2 size = style.CalcSize(new GUIContent(input)) + new Vector2(padding.x + padding.z, padding.y + padding.w);
+        int maxLineLength = state.LineLengths.Prepend(0).Max();
+        Vector2 size = new Vector2(maxLineLength * state.CharWidth, state.Lines.Length * state.LineHeight) + Padding * 2;
         if (size.x < minWidth) size.x = minWidth;
         return size;
     }
 
-    private static Vector4 GetCodeAreaPadding(GUIStyle style)
-    {
-        return new Vector4(style.padding.left, style.padding.top, style.padding.right, style.padding.bottom);
-    }
-
-    private static void StylizedTextField(string input, int start, int end, ref Rect position, Expression expression, CodeAreaInfo state)
+    private static void StylizedTextField(Vector2 position, string text, Expression expression, CodeAreaInfo state)
     {
         GUI.contentColor = GetExpressionColor(expression);
-
-        string[] lines = input.Substring(start, end - start).Split('\n');
-        for (int i = 0; i < lines.Length; i++)
-        {
-            string line = lines[i];
-            position.size = state.ContentStyle.CalcSize(new GUIContent(line));
-            state.AddContent(position, line, start);
-            GUI.Box(position, line, state.ContentStyle);
-            start += line.Length + 1; // +1 for the newline character
-            position.x += position.width;
-            if (i < lines.Length - 1) position.y += position.height;
-        }
+        GUI.Box(new Rect(position, new Vector2(text.Length * state.CharWidth, state.LineHeight)), text, state.ContentStyle);
     }
 
     private static void DrawSquigglyLine(string text, int startPos, int endPos, GUIStyle style)
@@ -344,6 +392,16 @@ public class CodeArea
         return SquigglyLineTexture;
     }
 
+    private static Font GetConsolasFont(int size)
+    {
+        if (ConsolasFonts.ContainsKey(size) && ConsolasFonts[size] != null) return ConsolasFonts[size];
+        
+        Font font = Font.CreateDynamicFontFromOSFont("Consolas", size);
+        font.RequestCharactersInTexture(EnglishCharacters, size, FontStyle.Normal);
+        ConsolasFonts.Add(size, font);
+        return font;
+    }
+
     private static void DrawLine(Vector2 start, Vector2 end, Color color, float width)
     {
         Handles.BeginGUI();
@@ -383,75 +441,69 @@ public class CodeAreaInfo : IComparer<Rect>
 {
     public Vector2 scrollPosition;
 
-    private int selectionStart;
-    private int selectionEnd;
-    public int SelectionStart { get => Mathf.Min(selectionStart, selectionEnd); private set => selectionStart = value; }
-    public int SelectionEnd { get => Mathf.Max(selectionStart, selectionEnd); set => selectionEnd = value; }
+    public int SelectionStartInternal;
+    public int SelectionEndInternal;
+    public int SelectionStart => Mathf.Min(SelectionStartInternal, SelectionEndInternal);
+    public int SelectionEnd => Mathf.Max(SelectionStartInternal, SelectionEndInternal);
 
-    public GUIStyle ContentStyle { get; private set; } = GUI.skin.label;
-    private List<Rect> contentRects = new List<Rect>();
-    private Dictionary<Rect, int> contentTextIndices = new Dictionary<Rect, int>();
-    private Dictionary<Rect, string> contents = new Dictionary<Rect, string>();
-    
+    public GUIStyle ContentStyle;
+    public int LineHeight => ContentStyle.font.lineHeight;
+    public int CharWidth => ContentStyle.font.characterInfo[0].advance; // doesn't matter which character, all consolas chars are the same width
+    public readonly List<int> LineLengths = new List<int>();
+    public string[] Lines { get; private set; }
+
+
     public void SetCursor(int index)
     {
-        selectionStart = index;
-        selectionEnd = index;
+        SelectionStartInternal = index;
+        SelectionEndInternal = index;
     }
 
-    public void ResetContentCache(GUIStyle contentStyle)
+    public void ClampSelection(int inputLength)
     {
-        ContentStyle = contentStyle;
-        contentRects.Clear();
-        contentTextIndices.Clear();
-        contents.Clear();
+        SelectionStartInternal = Math.Clamp(SelectionStartInternal, 0, inputLength);
+        SelectionEndInternal = Math.Clamp(SelectionEndInternal, 0, inputLength);
     }
-    
-    public void AddContent(Rect rect, string text, int textIndex)
+
+    public void SetLines(string[] lines)
     {
-        contentRects.Add(rect);
-        contentTextIndices.Add(rect, textIndex);
-        contents.Add(rect, text);
-        contentRects.Sort(this); // usually this should not be needed as the content is added in order, but sorting a sorted list should not cost much
+        Lines = lines;
+        LineLengths.Clear();
+        foreach (string line in lines)
+        {
+            LineLengths.Add(line.Length);
+        }
     }
 
     public int GetTextIndexAtPosition(Vector2 position)
     {
-        position += scrollPosition;
-        for (int i = 0; i < contentRects.Count; i++)
+        int lineIndex = Math.Clamp(Mathf.FloorToInt(position.y / LineHeight), 0, LineLengths.Count - 1);
+        int lineLength = LineLengths[lineIndex];
+        int charIndex = Math.Clamp(Mathf.RoundToInt(position.x / CharWidth), 0, lineLength);
+        int textIndex = 0;
+        for (int i = 0; i < lineIndex; i++)
         {
-            // we can use smaller than checks here because rects to the left or in a previous line have already been checked
-            Rect rect = contentRects[i];
-            if (position.y < rect.y + rect.height) // correct line
-            {
-                // if position is to the left of the end of this rect or the next rect is in a different line (indicating that position is to the right of the text area)
-                if (position.x < rect.x + rect.width || i == contentRects.Count-1 || contentRects[i + 1].y > rect.y) return GetTextIndexInRect(rect, position);
-            }
+            textIndex += LineLengths[i] + 1; // +1 for newline
         }
-
-        return contentRects.Count > 0 ? GetTextIndexInRect(contentRects[^1], position) : 0;
-    }
-
-    private int GetTextIndexInRect(Rect rect, Vector2 position)
-    {
-        return contentTextIndices[rect] + ContentStyle.GetCursorStringIndex(rect, new GUIContent(contents[rect]), position);
+        textIndex += charIndex;
+        return textIndex;
     }
 
     public Vector2 GetPositionAtTextIndex(int textIndex)
     {
-        if (contentRects.Count == 0) return Vector2.zero;
-        
-        foreach (Rect rect in contentRects)
+        int index = 0;
+        for (int i = 0; i < LineLengths.Count; i++)
         {
-            int rectTextIndex = contentTextIndices[rect];
-            string rectText = contents[rect];
-            if (textIndex >= rectTextIndex && textIndex < rectTextIndex + rectText.Length)
+            int lineLength = LineLengths[i];
+            if (textIndex <= index + lineLength) // textIndex == index+lineLength means position is to the right of the last character on the line
             {
-                return ContentStyle.GetCursorPixelPosition(rect, new GUIContent(rectText), textIndex - rectTextIndex);
+                int indexInLine = textIndex - index;
+                return new Vector2(indexInLine * CharWidth, i * LineHeight);
             }
+            index += lineLength + 1; // +1 for newline
         }
 
-        return contentRects[^1].position + new Vector2(contentRects[^1].width, 0); // should not happen
+        return new Vector2(0, LineLengths.Count * LineHeight); // shouldn't happen, but default return is required
     }
 
     public int Compare(Rect a, Rect b)

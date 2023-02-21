@@ -323,7 +323,7 @@ MonoBehaviour:
   minXConstraint:
     Input: 
   maxXConstraint:
-    Input: player.currentHealth/(player.maxHealth)
+    Input: player.currentHealth / player.maxHealth
   minYConstraint:
     Input: 
   maxYConstraint:

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Unity.VisualScripting;
+using UnityEngine;
 
 public abstract class CalculationExpression : Expression
 {
@@ -198,6 +199,7 @@ public class DivisionExpression : Expression
 {
     public override object Evaluate(DataContext context)
     {
+        Debug.Log($"{args[0].GetType()} / {args[1].GetType()}");
         object left = Left.Evaluate(context);
         object right = Right.Evaluate(context);
         return CalculationExpression.PerformOperation(left, right, '/', this);

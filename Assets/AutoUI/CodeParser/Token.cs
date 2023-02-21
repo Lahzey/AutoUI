@@ -134,6 +134,8 @@ public class NumberToken : Token
 
 public class WhitespaceToken : Token
 {
+    public static char PLACEHOLDER = 'W';
+    
     private char whitespace;
 
     public WhitespaceToken(char whitespace)
@@ -143,7 +145,12 @@ public class WhitespaceToken : Token
 
     public override string ToString()
     {
-        return "W";
+        return PLACEHOLDER + "";
+    }
+
+    public override string GetPlaceholder()
+    {
+        return PLACEHOLDER + "";
     }
 }
 

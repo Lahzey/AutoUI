@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Text.RegularExpressions;
 
 [System.AttributeUsage(System.AttributeTargets.Class)]
@@ -23,7 +24,14 @@ public class ExpressionPatternAttribute : System.Attribute
             else throw new ArgumentException("ExpressionPatternAttribute only accepts strings and types as arguments.");
         }
 
-        return string.Join(AutoSpace ? " " : "", pattern);
+        string joined = string.Join(AutoSpace ? " " : "", pattern);
+        StringBuilder resultBuilder = new StringBuilder();
+        foreach (char c in joined)
+        {
+            if (c == ' ') resultBuilder.Append(@" (?:" + WhitespaceToken.PLACEHOLDER + @" )*");
+            else resultBuilder.Append(c);
+        }
+        return resultBuilder.ToString();
     }
 
     public static string TypeOfPattern(Type type)

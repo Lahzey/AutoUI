@@ -93,7 +93,7 @@ public class PatternMatch
                 }
 
                 ParsedElement parsedElement = parseResult[currentMatchedElementIndex];
-                if (parsedElement is not SingleCharToken or MultiCharToken) // no need to add these as they are already contained as is in the pattern and do not carry any additional information
+                if (parsedElement is not SingleCharToken && parsedElement is not MultiCharToken && parsedElement is not WhitespaceToken) // no need to add these as they are already contained as is in the pattern and do not carry any additional information
                 {
                     matchedElements.Add(parsedElement);
                 }
