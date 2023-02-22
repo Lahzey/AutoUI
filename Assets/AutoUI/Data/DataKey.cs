@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 public class DataKeyBase
 {
@@ -17,8 +18,15 @@ public class DataKeyBase
     public static DataKeyBase Get(string key)
     {
         if (dataKeyRegistry == null) initRegistry();
-        key = key.ToLower();
         return dataKeyRegistry.ContainsKey(key) ? dataKeyRegistry[key] : null;
+    }
+
+    public static DataKeyBase[] GetAll()
+    {
+        if (dataKeyRegistry == null) initRegistry();
+        DataKeyBase[] dataKeys = new DataKeyBase[dataKeyRegistry.Count];
+        dataKeyRegistry.Values.CopyTo(dataKeys, 0);
+        return dataKeys;
     }
 
     private static void initRegistry()
@@ -27,16 +35,19 @@ public class DataKeyBase
         
         // use reflection to get all subclasses of DataKey<T> and add all their static fields of type DataKey<T> to the registry
         Type dataKeyType = typeof(DataKeyBase);
-        Type[] types = dataKeyType.Assembly.GetTypes();
-        foreach (Type type in types)
+        foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
         {
-            if (type.GetCustomAttributes(typeof(DataKeyRegistryAttribute), true).Length == 0) continue;
-            foreach (System.Reflection.FieldInfo field in type.GetFields())
+            Type[] types = assembly.GetTypes();
+            foreach (Type type in types)
             {
-                if (!field.FieldType.IsSubclassOf(dataKeyType)) continue;
+                if (type.GetCustomAttributes(typeof(DataKeyRegistryAttribute), true).Length == 0) continue;
+                foreach (FieldInfo field in type.GetFields())
+                {
+                    if (!field.FieldType.IsSubclassOf(dataKeyType)) continue;
                 
-                DataKeyBase dataKey = (DataKeyBase) field.GetValue(null);
-                dataKeyRegistry.Add(dataKey.Key.ToLower(), dataKey);
+                    DataKeyBase dataKey = (DataKeyBase) field.GetValue(null);
+                    dataKeyRegistry.Add(dataKey.Key, dataKey);
+                }
             }
         }
     }

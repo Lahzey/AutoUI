@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
+using UnityEngine;
 
 [Serializable]
 public class CodeInput
@@ -32,29 +33,31 @@ public class CodeInput
     }
     
     
-    public static ParseResult GetParseResult(string input)
+    public static ParseResult GetParseResult(string input, Action<ParseResult> onResult = null)
     {
         lock (parseResults)
         {
             if (parseResults.ContainsKey(input))
             {
+                onResult?.Invoke(parseResults[input]);
                 return parseResults[input];
             }
         }
-        ParseAsync(input);
+        ParseAsync(input, onResult);
         return null;
     }
 
-    public static void ParseAsync(string input)
+    public static void ParseAsync(string input, Action<ParseResult> onResult = null)
     {
         lock (currentlyParsing)
         {
-            if (currentlyParsing.Contains(input)) return;
+            if (currentlyParsing.Contains(input)) return; // we cannot call onResult here, but that's fine. The UI will usually be the first to request a parse result and if it doesn't work sometimes it's okay
             currentlyParsing.Add(input);
         }
         Thread thread = new Thread(() =>
         {
             ParseResult result = CodeParser.TryParse(input);
+            onResult?.Invoke(result);
             lock (parseResults)
             {
                 if (!parseResults.ContainsKey(input)) parseResults.Add(input, result); // the contains key check should be redundant, but just in case

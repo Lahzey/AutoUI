@@ -1,38 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public abstract class CalculationExpression : Expression
 {
-    // private int priority;
-    // private Action action;
-    //
-    // public override void Prepare(object[] args)
-    // {
-    //     base.Prepare(args);
-    //
-    //     Expression left = (Expression) args[0];
-    //     Expression right = (Expression) args[1];
-    //     if (left is CalculationExpression leftCalculation)
-    //     {
-    //         if (leftCalculation.priority < priority)
-    //         {
-    //             Left = leftCalculation.Right;
-    //             leftCalculation.Right = this;
-    //         }
-    //     }
-    //     if (Right is CalculationExpression rightCalculation)
-    //     {
-    //         if (rightCalculation.priority < priority)
-    //         {
-    //             Right = rightCalculation.Left;
-    //             rightCalculation.Left = this;
-    //         }
-    //     }
-    //     
-    //     Action action = () => { };
-    // }
     
     public static object PerformOperation(object a, object b, char operation, Expression expressionRef)
     {

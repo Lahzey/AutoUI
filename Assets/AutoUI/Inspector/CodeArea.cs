@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Reflection;
+using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 using Vector2 = UnityEngine.Vector2;
@@ -20,6 +22,8 @@ public class CodeArea
     
     private static readonly Vector2 Padding = new Vector2(5, 2); // left, top and right, bottom both have this padding
     
+    public static readonly int MaxAutoCompleteOptions = 5;
+    
     // cached assets
     private static Texture2D SquigglyLineTexture = null;
     private static Dictionary<int, Texture2D> CircleTextures = new Dictionary<int, Texture2D>(); // <radius, texture> all of them are white
@@ -36,7 +40,7 @@ public class CodeArea
         CodeSegmentStyle.alignment = TextAnchor.UpperLeft;
     }
 
-    public static string ScrolledArea(Rect position, string input, ParseResult parseResult, GUIStyle style)
+    public static string ScrolledArea(Rect position, string input, ParseResult parseResult, GUIStyle style, out Vector2 preferredSize)
     {
         int controlId = GUIUtility.GetControlID(FocusType.Keyboard);
         bool hasFocus = GUIUtility.keyboardControl == controlId;
@@ -47,13 +51,17 @@ public class CodeArea
         state.ContentStyle = CodeSegmentStyle;
         state.SetLines(input.Split('\n'));
 
-        Action autoCompleteCallback = null; // TODO autocomplete
         Rect inputBounds = new Rect(position.position + Padding, position.size - Padding * 2);
         switch (Event.current.GetTypeForControl(controlId))
         {
             case EventType.KeyDown:
-                string newInput = HandleKeyDownEvent(input, state, autoCompleteCallback);
-                if (newInput != input) GUI.changed = true;
+                string newInput = HandleKeyDownEvent(input, state, out bool canShowAutoComplete);
+                if (newInput != input)
+                {
+                    if (canShowAutoComplete) state.CreateAutoComplete(newInput);
+                    else state.HideAutoComplete();
+                    GUI.changed = true;
+                }
                 input = newInput;
                 break;
             case EventType.MouseDown:
@@ -65,24 +73,30 @@ public class CodeArea
                     GUIUtility.keyboardControl = 0;
                 }
 
-                state.SetCursor(state.GetTextIndexAtPosition(Event.current.mousePosition - inputBounds.position));
+                int clickedIndex = state.GetTextIndexAtPosition(Event.current.mousePosition - inputBounds.position);
+                if (Event.current.shift) state.SelectionEndInternal = clickedIndex;
+                else state.SetCursor(clickedIndex);
                 Event.current.Use();
+                state.HideAutoComplete();
                 break;
             case EventType.MouseDrag:
                 state.SelectionEndInternal = state.GetTextIndexAtPosition(Event.current.mousePosition - inputBounds.position);
                 Event.current.Use();
+                state.HideAutoComplete();
                 break;
             case EventType.Repaint:
-                Draw(position, input, parseResult, hasFocus, state, style);
+                Draw(position, input, parseResult, hasFocus, state);
                 break;
         }
+
+        preferredSize = GetCodeAreaSize(state, position.width);
         
         return input;
     }
 
-    private static void Draw(Rect position, string input, ParseResult parseResult, bool hasFocus, CodeAreaInfo state, GUIStyle style)
+    private static void Draw(Rect position, string input, ParseResult parseResult, bool hasFocus, CodeAreaInfo state)
     {
-        
+        Color oldColor = GUI.color;
         FillRoundRect(position, BackgroundColor, 5);
         DrawRoundRect(position, hasFocus ? BorderColorSelected : BorderColor, 2, 5);
         Rect codeAreaBounds = new Rect(Vector2.zero, GetCodeAreaSize(state, position.width));
@@ -96,7 +110,7 @@ public class CodeArea
         if (hasFocus)
         {
             Vector2 cursorPosition = state.GetPositionAtTextIndex(state.SelectionEndInternal);
-            DrawLine(cursorPosition, cursorPosition + new Vector2(0, state.LineHeight), Color.white, 1);
+            FillRoundRect(new Rect(cursorPosition, new Vector2(1, state.LineHeight)), Color.white, 1);
             if (state.SelectionStart != state.SelectionEnd)
             {
                 string selection = input.Substring(state.SelectionStart, state.SelectionEnd - state.SelectionStart);
@@ -110,21 +124,19 @@ public class CodeArea
                     GUI.DrawTexture(new Rect(selectionStartPosition, new Vector2(selectionEndPosition.x - selectionStartPosition.x, state.LineHeight)), EditorGUIUtility.whiteTexture);
                     index += line.Length + 1;
                 }
-            } 
+            }
         }
         #endregion
 
         #region Errors
-
         if (parseResult != null && parseResult.Exception != null)
         {
             for (int i = 0; i < parseResult.Exception.MessageCount(); i++)
             {
-                Debug.Log(parseResult.Exception.GetMessage(i));
-                DrawSquigglyLine(input, parseResult.Exception.GetStartPosition(i), parseResult.Exception.GetEndPosition(i), CodeSegmentStyle);
+                Debug.LogWarning("Error in Code Input Field: " + parseResult.Exception.GetMessage(i));
+                DrawSquigglyLine(parseResult.Exception.GetStartPosition(i), parseResult.Exception.GetEndPosition(i), state);
             }
         }
-
         #endregion
 
         #region CodeElements
@@ -155,18 +167,57 @@ public class CodeArea
             charCountBeforeLine += state.LineLengths[lineIndex] + 1; // +1 for the newline character
         }
         #endregion
+        
 
         GUI.EndGroup();
         GUI.EndScrollView();
-    }
-
-    private void HandleInput(CodeAreaInfo state, int controlId)
-    {
         
+        #region AutoComplete
+        if (hasFocus && state.ShowAutoComplete)
+        {
+            int longestFieldName = state.AutoCompleteOptions.Skip(state.AutoCompleteIndex).Take(MaxAutoCompleteOptions).Aggregate(0, (current, fieldName) => Mathf.Max(current, fieldName.Length));
+            int longestTypeName = state.AutoCompleteTypes.Skip(state.AutoCompleteIndex).Take(MaxAutoCompleteOptions).Aggregate(0, (current, fieldType) => Mathf.Max(current, fieldType.Name.Length));
+
+            Vector2 positionAtCursor = position.position + contentBounds.position + state.GetPositionAtTextIndex(state.SelectionEndInternal);
+            Vector2 autoCompleteWindowSize = new Vector2((longestFieldName + 3 + longestTypeName) * state.CharWidth, Math.Min(MaxAutoCompleteOptions, state.AutoCompleteOptions.Count) * state.LineHeight);
+            float maxY = position.y + position.height;
+            float maxWindowY = positionAtCursor.y + autoCompleteWindowSize.y;
+            if (maxWindowY > maxY) positionAtCursor.y -= maxWindowY - maxY;
+            Rect bounds = new Rect(positionAtCursor, autoCompleteWindowSize);
+            
+            GUI.BeginClip(bounds);
+            bounds.position = Vector2.zero;
+            FillRoundRect(bounds, Color.white, 0);
+            DrawRoundRect(bounds, Color.black, 1, 0);
+
+            int endIndex = Math.Min(state.AutoCompleteIndex + MaxAutoCompleteOptions, state.AutoCompleteOptions.Count);
+            for (int i = state.AutoCompleteIndex; i < endIndex; i++)
+            {
+                string fieldName = state.AutoCompleteOptions[i];
+                string fieldType = state.AutoCompleteTypes[i].Name;
+                float y = bounds.y + (i - state.AutoCompleteIndex) * state.LineHeight;
+                
+                if (i == state.AutoCompleteSelection) FillRoundRect(new Rect(bounds.x, y, bounds.width, state.LineHeight), SelectionColor, 0);
+                
+                GUI.color = Color.black;
+                GUI.Label(new Rect(bounds.x, y, (longestFieldName + 3) * state.CharWidth, state.LineHeight), fieldName);
+                GUI.color = Color.gray;
+                GUI.Label(new Rect(bounds.x + (longestFieldName + 3) * state.CharWidth, y, longestTypeName * state.CharWidth, state.LineHeight), fieldType);
+            }
+
+            GUI.EndClip();
+        }
+        #endregion
+        
+        GUI.color = oldColor;
     }
 
-    private static string HandleKeyDownEvent(string input, CodeAreaInfo state, Action autoCompleteCallback)
+    private static string HandleKeyDownEvent(string input, CodeAreaInfo state, out bool canShowAutoComplete)
     {
+        // ok, this is so stupid, on Windows we get a correct KeyCode with a null key char and a None KeyCode with the correct char for each input character
+        // so in a press of 'a' would result in the events [KeyCode.A, char \0] and [KeyCode.None, char 'a']
+        // char \0 is very problematic because inserting it into a string will end that string at that position
+        canShowAutoComplete = false;
         switch (Event.current.keyCode)
         {
             case KeyCode.Backspace:
@@ -199,9 +250,20 @@ public class CodeArea
                 break;
             case KeyCode.Return: // enter
             case KeyCode.Tab:
-                if (autoCompleteCallback != null) autoCompleteCallback();
+                if (state.ShowAutoComplete)
+                {
+                    input = ReplaceSelection(input, state, state.AutoCompleteTextInserts[state.AutoCompleteSelection]);
+                    state.HideAutoComplete();
+                }
                 else input = ReplaceSelection(input, state, Event.current.keyCode == KeyCode.Return ? "\n" : "\t");
                 Event.current.Use();
+                break;
+            case KeyCode.Escape:
+                if (state.ShowAutoComplete)
+                {
+                    state.HideAutoComplete();
+                    Event.current.Use();
+                }
                 break;
             case KeyCode.LeftArrow:
             case KeyCode.RightArrow:
@@ -213,51 +275,76 @@ public class CodeArea
                 break;
             case KeyCode.UpArrow:
             case KeyCode.DownArrow:
-                if (1 == 0) // TODO: if currently showing autocomplete
+                bool up = Event.current.keyCode == KeyCode.UpArrow;
+                if (state.ShowAutoComplete)
                 {
-                    
+                    state.AutoCompleteSelection = Math.Clamp(state.AutoCompleteSelection + (up ? -1 : 1), 0, state.AutoCompleteOptions.Count - 1);
+                    if (state.AutoCompleteSelection > Math.Min(state.AutoCompleteIndex + MaxAutoCompleteOptions - 1, state.AutoCompleteOptions.Count - 1)) state.AutoCompleteIndex++;
+                    else if (state.AutoCompleteSelection < state.AutoCompleteIndex) state.AutoCompleteIndex--;
                 }
                 else
                 {
-                    bool up = Event.current.keyCode == KeyCode.UpArrow;
-                    string[] lines = input.Split('\n');
                     int index = 0;
-                    for (int i = 0; i < lines.Length; i++)
+                    for (int i = 0; i < state.Lines.Length; i++)
                     {
-                        string line = lines[i];
-                        if (index + line.Length >= state.SelectionEndInternal)
+                        int lineLength = state.LineLengths[i];
+                        if (index + lineLength >= state.SelectionEndInternal)
                         {
                             int lineIndex = state.SelectionEndInternal - index;
-                            int targetLine = Math.Clamp(up ? lineIndex - 1 : lineIndex + 1, 0, lines.Length - 1);
+                            int targetLine = Math.Clamp(up ? i - 1 : i + 1, 0, state.Lines.Length - 1);
                             if (targetLine == i) break;
 
-                            int targetLineIndex = Math.Clamp(lineIndex, 0, lines[targetLine].Length - 1);
-                            int targetLineStartIndex = up ? index - lines[targetLine].Length : index + line.Length;
+                            int targetLineIndex = Math.Clamp(lineIndex, 0, state.LineLengths[targetLine]);
+                            int targetLineStartIndex = up ? index - (state.LineLengths[targetLine] + 1) : index + lineLength + 1; // +1 for the newline character
                             state.SetCursor(targetLineStartIndex + targetLineIndex);
                             state.ClampSelection(input.Length); // just in case, should not be necessary
                             break;
                         }
-                        index += line.Length + 1;
+                        index += lineLength + 1;
                     }
                 }
-                Event.current.Use();
-                break;
-            case KeyCode.V:
-                input = ReplaceSelection(input, state, Event.current.control ? GUIUtility.systemCopyBuffer : Event.current.character.ToString());
-                Event.current.Use();
-                break;
-            case KeyCode.C:
-                if (Event.current.control) GUIUtility.systemCopyBuffer = input.Substring(state.SelectionStart, state.SelectionEnd - state.SelectionStart);
-                else input = ReplaceSelection(input, state, Event.current.character.ToString());
                 Event.current.Use();
                 break;
             default:
                 char c = Event.current.character;
                 if (c >= 32 && c <= 126) // any visible ascii character is in this range
                 {
-                    input = ReplaceSelection(input, state, Event.current.character.ToString());
-                    Event.current.Use();
+                    switch (c)
+                    {
+                        case 'v':
+                        case 'V':
+                            input = ReplaceSelection(input, state, Event.current.control ? GUIUtility.systemCopyBuffer : Event.current.character.ToString());
+                            Event.current.Use();
+                            break;
+                        case 'c':
+                        case 'C':
+                            if (Event.current.control) GUIUtility.systemCopyBuffer = input.Substring(state.SelectionStart, state.SelectionEnd - state.SelectionStart);
+                            else input = ReplaceSelection(input, state, Event.current.character.ToString());
+                            Event.current.Use();
+                            break;
+                        case 'a':
+                        case 'A':
+                            if (Event.current.control)
+                            {
+                                state.SelectionStartInternal = 0;
+                                state.SelectionEndInternal = input.Length;
+                            } else input = ReplaceSelection(input, state, Event.current.character.ToString());
+                            Event.current.Use();
+                            break;
+                        case ' ':
+                            if (Event.current.control)
+                            {
+                                state.CreateAutoComplete(input); // this will refresh even if the autocomplete is already shown, to allow the user to refresh options if the tool bugs out
+                            } else input = ReplaceSelection(input, state, Event.current.character.ToString());
+                            Event.current.Use();
+                            break;
+                        default:
+                            input = ReplaceSelection(input, state, Event.current.character.ToString());
+                            Event.current.Use();
+                            break;
+                    }
                 }
+                canShowAutoComplete = !char.IsWhiteSpace(c);
                 break;
         }
 
@@ -282,37 +369,29 @@ public class CodeArea
 
     private static void StylizedTextField(Vector2 position, string text, Expression expression, CodeAreaInfo state)
     {
-        GUI.contentColor = GetExpressionColor(expression);
-        GUI.Box(new Rect(position, new Vector2(text.Length * state.CharWidth, state.LineHeight)), text, state.ContentStyle);
+        GUI.color = GetExpressionColor(expression);
+        GUI.Label(new Rect(position, new Vector2(text.Length * state.CharWidth, state.LineHeight)), text, state.ContentStyle);
     }
 
-    private static void DrawSquigglyLine(string text, int startPos, int endPos, GUIStyle style)
+    private static void DrawSquigglyLine(int startPos, int endPos, CodeAreaInfo state)
     {
-        startPos = Mathf.Min(startPos, text.Length - 1);
-        endPos = Mathf.Min(endPos, text.Length);
-
-        int linesAboveCount = 0;
-        int thisLineStartPos = 0;
-        for (int i = 0; i < startPos; i++)
-        {
-            if (text[i] == '\n')
-            {
-                linesAboveCount++;
-                thisLineStartPos = i + 1;
-            }
-        }
-
-        float xPos = style.CalcSize(new GUIContent(text.Substring(thisLineStartPos, startPos - thisLineStartPos))).x;
-        Rect position = new Rect(xPos, style.lineHeight, 0, 0);
-        string[] lines = text.Substring(startPos, endPos - startPos).Split('\n');
-        int pos = startPos;
+        GUI.color = Color.white;
+        
         Texture2D squigglyLineTexture = GetSquigglyLineTexture();
-        foreach (string line in lines)
+
+        int lineStart = 0;
+        for (int i = 0; i < state.Lines.Length; i++)
         {
-            position.size = style.CalcSize(new GUIContent(text.Substring(startPos, endPos - startPos)));
-            GUI.DrawTextureWithTexCoords(position, squigglyLineTexture, new Rect(0, 0, position.width / squigglyLineTexture.width, 1));
-            position.x += position.width;
-            position.y += position.height;
+            int lineLength = state.LineLengths[i];
+            if (startPos < lineStart + lineLength)
+            {
+                int end = Math.Min(endPos, lineStart + lineLength);
+                Rect position = new Rect((startPos - lineStart) * state.CharWidth, (i+1) * state.LineHeight - squigglyLineTexture.height, (end - startPos) * state.CharWidth, squigglyLineTexture.height);
+                GUI.DrawTextureWithTexCoords(position, squigglyLineTexture, new Rect(0, 0, position.width / squigglyLineTexture.width, 1));
+                startPos = end + 1; // +1 for the newline character
+                if (endPos == end) break;
+            }
+            lineStart += lineLength + 1;
         }
     }
     
@@ -324,6 +403,8 @@ public class CodeArea
         DrawLine(new Vector2(rect.x + rect.width, rect.y + radius), new Vector2(rect.x + rect.width, rect.y + rect.height - radius), color, width);
         DrawLine(new Vector2(rect.x + rect.width - radius, rect.y + rect.height), new Vector2(rect.x + radius, rect.y + rect.height), color, width);
         DrawLine(new Vector2(rect.x, rect.y + rect.height - radius), new Vector2(rect.x, rect.y + radius), color, width);
+        
+        if (radius <= 0) return;
 
         // Draw the corners
         DrawArc(new Vector2(rect.x + radius, rect.y + radius), radius, 180f, 270f, color, width);
@@ -334,24 +415,30 @@ public class CodeArea
     
     private static void FillRoundRect(Rect rect, Color color, float radius)
     {
+        Color oldColor = GUI.color;
         GUI.color = color;
 
-        Texture2D circle = GetCircleTexture((int) radius);
+        if (radius > 0)
+        {
+            Texture2D circle = GetCircleTexture((int) radius);
+            
+            // Draw the corners by just drawing different parts of the same circle texture (texture coords are from bottom to top, while UI coords are from top to bottom)
+            GUI.DrawTextureWithTexCoords(new Rect(rect.x, rect.y, radius, radius), circle, new Rect(0, 0.5f, 0.5f, 0.5f));
+            GUI.DrawTextureWithTexCoords(new Rect(rect.xMax - radius, rect.y, radius, radius), circle, new Rect(0.5f, 0.5f, 0.5f, 0.5f));
+            GUI.DrawTextureWithTexCoords(new Rect(rect.x, rect.yMax - radius, radius, radius), circle, new Rect(0, 0, 0.5f, 0.5f));
+            GUI.DrawTextureWithTexCoords(new Rect(rect.xMax - radius, rect.yMax - radius, radius, radius), circle, new Rect(0.5f, 0, 0.5f, 0.5f));
+            
+            // Draw the sides (the -1 and +2 are to fix line gaps, probably caused by floating point inaccuracies)
+            GUI.DrawTexture(new Rect(rect.x + radius - 1, rect.y, rect.width + 2 - 2 * radius, radius), EditorGUIUtility.whiteTexture);
+            GUI.DrawTexture(new Rect(rect.x + radius - 1, rect.yMax - radius, rect.width + 2 - 2 * radius, radius), EditorGUIUtility.whiteTexture);
+            GUI.DrawTexture(new Rect(rect.x, rect.y + radius, radius, rect.height - 2 * radius), EditorGUIUtility.whiteTexture);
+            GUI.DrawTexture(new Rect(rect.xMax - radius, rect.y + radius, radius, rect.height - 2 * radius), EditorGUIUtility.whiteTexture);
+        }
 
-        // Draw the corners by just drawing different parts of the same circle texture (texture coords are from bottom to top, while UI coords are from top to bottom)
-        GUI.DrawTextureWithTexCoords(new Rect(rect.x, rect.y, radius, radius), circle, new Rect(0, 0.5f, 0.5f, 0.5f));
-        GUI.DrawTextureWithTexCoords(new Rect(rect.xMax - radius, rect.y, radius, radius), circle, new Rect(0.5f, 0.5f, 0.5f, 0.5f));
-        GUI.DrawTextureWithTexCoords(new Rect(rect.x, rect.yMax - radius, radius, radius), circle, new Rect(0, 0, 0.5f, 0.5f));
-        GUI.DrawTextureWithTexCoords(new Rect(rect.xMax - radius, rect.yMax - radius, radius, radius), circle, new Rect(0.5f, 0, 0.5f, 0.5f));
-
-        // Draw the sides (the -1 and +2 are to fix line gaps, probably caused by floating point inaccuracies)
-        GUI.DrawTexture(new Rect(rect.x + radius - 1, rect.y, rect.width + 2 - 2 * radius, radius), EditorGUIUtility.whiteTexture);
-        GUI.DrawTexture(new Rect(rect.x + radius - 1, rect.yMax - radius, rect.width + 2 - 2 * radius, radius), EditorGUIUtility.whiteTexture);
-        GUI.DrawTexture(new Rect(rect.x, rect.y + radius, radius, rect.height - 2 * radius), EditorGUIUtility.whiteTexture);
-        GUI.DrawTexture(new Rect(rect.xMax - radius, rect.y + radius, radius, rect.height - 2 * radius), EditorGUIUtility.whiteTexture);
-        
         // Draw the center
         GUI.DrawTexture(new Rect(rect.x + radius - 1, rect.y + radius, rect.width + 2 - 2 * radius, rect.height - 2 * radius), EditorGUIUtility.whiteTexture);
+        
+        GUI.color = oldColor;
     }
 
     private static Texture2D GetCircleTexture(int radius)
@@ -371,7 +458,7 @@ public class CodeArea
             }
         }
         texture.Apply();
-        CircleTextures.Add(radius, texture);
+        CircleTextures[radius] = texture;
         return texture;
     }
 
@@ -398,7 +485,7 @@ public class CodeArea
         
         Font font = Font.CreateDynamicFontFromOSFont("Consolas", size);
         font.RequestCharactersInTexture(EnglishCharacters, size, FontStyle.Normal);
-        ConsolasFonts.Add(size, font);
+        ConsolasFonts[size] = font;
         return font;
     }
 
@@ -445,10 +532,27 @@ public class CodeAreaInfo : IComparer<Rect>
     public int SelectionEndInternal;
     public int SelectionStart => Mathf.Min(SelectionStartInternal, SelectionEndInternal);
     public int SelectionEnd => Mathf.Max(SelectionStartInternal, SelectionEndInternal);
+    public bool ShowAutoComplete { get; private set; }
+    public readonly List<string> AutoCompleteOptions = new List<string>();
+    public readonly List<Type> AutoCompleteTypes = new List<Type>();
+    public readonly List<string> AutoCompleteTextInserts = new List<string>();
+    public int AutoCompleteIndex { get; set; }
+    public int AutoCompleteSelection { get; set; }
 
-    public GUIStyle ContentStyle;
-    public int LineHeight => ContentStyle.font.lineHeight;
-    public int CharWidth => ContentStyle.font.characterInfo[0].advance; // doesn't matter which character, all consolas chars are the same width
+    private GUIStyle _contentStyle;
+    public GUIStyle ContentStyle
+    {
+        get => _contentStyle;
+        set
+        {
+            _contentStyle = value;
+            LineHeight = ContentStyle.font.lineHeight;
+            CharWidth = ContentStyle.font.characterInfo[0].advance; // doesn't matter which character, all consolas chars are the same width
+        }
+    }
+
+    public int LineHeight { get; private set; }
+    public int CharWidth { get; private set; }
     public readonly List<int> LineLengths = new List<int>();
     public string[] Lines { get; private set; }
 
@@ -473,6 +577,97 @@ public class CodeAreaInfo : IComparer<Rect>
         {
             LineLengths.Add(line.Length);
         }
+    }
+    
+    public void CreateAutoComplete(string input)
+    {
+        HideAutoComplete();
+
+        CodeInput.GetParseResult(input, parseResult =>
+        {
+            int textIndex = SelectionStart;
+        
+            Type contextType = null;
+            string fieldPrefix = null;
+        
+            if (textIndex > 0 && parseResult.Source[textIndex - 1] == '.')
+            {
+                Expression contextExpression = GetExpressionAt(parseResult, textIndex - 2, out int expressionStart);
+                if (contextExpression != null) contextType = contextExpression.GetExpectedType();
+            }
+            else
+            {
+                Expression previousExpression = GetExpressionAt(parseResult, textIndex - 1, out int expressionStart);
+                if (previousExpression is VariableExpression variableExpression)
+                {
+                    contextType = variableExpression.contextType;
+                    fieldPrefix = variableExpression.VariableName.Substring(0, textIndex - expressionStart);
+                }
+            }
+            
+
+            if (contextType == null) // null means we look at the data store
+            {
+                foreach (DataKeyBase dataKey in DataKeyBase.GetAll())
+                {
+                    if (fieldPrefix == null || (dataKey.Key.StartsWith(fieldPrefix) && dataKey.Key != fieldPrefix))
+                    {
+                        AutoCompleteOptions.Add(dataKey.Key);
+                        AutoCompleteTypes.Add(dataKey.Type);
+                        AutoCompleteTextInserts.Add(dataKey.Key[(fieldPrefix?.Length??0)..]);
+                    }
+                }
+                ShowAutoComplete = true;
+            } else if (contextType != typeof(object)) // not gonna show autocomplete for object, as this indicates that the type is unknown
+            {
+                foreach (FieldInfo fieldInfo in contextType.GetFields())
+                {
+                    if (fieldPrefix == null || (fieldInfo.Name.StartsWith(fieldPrefix) && fieldInfo.Name != fieldPrefix))
+                    {
+                        AutoCompleteOptions.Add(fieldInfo.Name);
+                        AutoCompleteTypes.Add(fieldInfo.FieldType);
+                        AutoCompleteTextInserts.Add(fieldInfo.Name[(fieldPrefix?.Length??0)..]);
+                    }
+                }
+                foreach (PropertyInfo propertyInfo in contextType.GetProperties())
+                {
+                    if (propertyInfo.GetMethod.IsPublic && fieldPrefix == null || (propertyInfo.Name.StartsWith(fieldPrefix) && propertyInfo.Name != fieldPrefix))
+                    {
+                        AutoCompleteOptions.Add(propertyInfo.Name);
+                        AutoCompleteTypes.Add(propertyInfo.PropertyType);
+                        AutoCompleteTextInserts.Add(propertyInfo.Name[(fieldPrefix?.Length??0)..]);
+                    }
+                }
+                ShowAutoComplete = AutoCompleteOptions.Count > 0;
+            }
+        });
+    }
+    
+    public void HideAutoComplete()
+    {
+        ShowAutoComplete = false;
+        AutoCompleteOptions.Clear();
+        AutoCompleteTypes.Clear();
+        AutoCompleteTextInserts.Clear();
+        AutoCompleteIndex = 0;
+    }
+
+    private static Expression GetExpressionAt(ParseResult parseResult, int index, out int expressionStart)
+    {
+        Expression expression = parseResult.ExpressionsAtPositions.ContainsKey(index) ? parseResult.ExpressionsAtPositions[index] : null;
+        if (expression != null)
+        {
+            for (int i = index - 1; i >= 0; i--)
+            {
+                if (parseResult.ExpressionsAtPositions[i] != expression)
+                {
+                    expressionStart = i + 1;
+                    return expression; // early return to prevent setting to start
+                }
+            }
+        }
+        expressionStart = 0;
+        return expression;
     }
 
     public int GetTextIndexAtPosition(Vector2 position)
