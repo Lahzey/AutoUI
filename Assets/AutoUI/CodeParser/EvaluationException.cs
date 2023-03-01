@@ -1,12 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
+using AutoUI.CodeParser.Expressions;
 
-public class EvaluationException : Exception
-{
-    public Expression ExpressionToEvaluate { get; private set; }
+namespace AutoUI.CodeParser {
+public class EvaluationException : Exception {
+	public EvaluationException(string message, Expression expressionToEvaluate) : base(message) {
+		ExpressionToEvaluate = expressionToEvaluate;
+	}
 
-    public EvaluationException(string message, Expression expressionToEvaluate) : base(message)
-    {
-        ExpressionToEvaluate = expressionToEvaluate;
-    }
+	public Expression ExpressionToEvaluate { get; }
+}
 }

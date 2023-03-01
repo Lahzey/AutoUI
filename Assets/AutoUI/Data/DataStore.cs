@@ -1,20 +1,15 @@
-﻿using System.Collections.Generic;
+﻿namespace AutoUI.Data {
+public class DataStore : DataContext {
+	public static readonly DataStore Instance = new();
 
-public class DataStore : DataContext
-{
-    public static readonly DataStore Instance = new DataStore();
-    
-    private DataStore() : base(null)
-    {
-    }
+	private DataStore() : base(null) { }
 
-    public void Set<T>(DataKey<T> key, T value)
-    {
-        base.SetLocal(key.Key, value);
-    }
-    
-    public T Get<T>(DataKey<T> key)
-    {
-        return (T) base.Get(key.Key, default(T));
-    }
+	public void Set<T>(DataKey<T> key, T value) {
+		SetLocal(key.Key, value);
+	}
+
+	public T Get<T>(DataKey<T> key) {
+		return (T)base.Get(key.Key, default(T));
+	}
+}
 }

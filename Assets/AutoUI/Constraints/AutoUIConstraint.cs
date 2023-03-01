@@ -1,24 +1,18 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+using AutoUI.Data;
 using UnityEngine;
-using Debug = UnityEngine.Debug;
 
-public abstract class AutoUIConstraint : MonoBehaviour
-{
-    protected UINode node;
-    
-    protected virtual void Awake()
-    {
-        node = UINode.AddToNode(this);
-    }
+namespace AutoUI.Constraints {
+public abstract class AutoUIConstraint : MonoBehaviour {
+	protected UINode node;
 
-    protected virtual void OnDestroy()
-    {
-        node.Remove(this);
-    }
+	protected virtual void Awake() {
+		node = UINode.AddToNode(this);
+	}
 
-    public abstract void Render(DataContext context);
+	protected virtual void OnDestroy() {
+		node.Remove(this);
+	}
 
-
+	public abstract void Render(DataContext context);
+}
 }
