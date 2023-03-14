@@ -12,12 +12,6 @@ namespace AutoUI.Inspector {
 public class CodeArea {
 	private static readonly string EnglishCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~ \t\n\r";
 
-	private static readonly Color BorderColor = new(0, 0, 0, 1);
-	private static readonly Color BorderColorHover = new(0.7f, 0.7f, 0.7f, 1);
-	private static readonly Color BorderColorSelected = new(0.23f, 0.47f, 0.73f, 1);
-	private static readonly Color BackgroundColor = new(0.165f, 0.165f, 0.165f, 1);
-	private static readonly Color SelectionColor = new(0.23f, 0.47f, 0.73f, 1);
-
 	private static readonly Vector2 Padding = new(5, 2); // left, top and right, bottom both have this padding
 
 	public static readonly int MaxAutoCompleteOptions = 5;
@@ -45,6 +39,7 @@ public class CodeArea {
 		CodeSegmentStyle.font = GetConsolasFont(style.fontSize > 0 ? style.fontSize : style.font.fontSize);
 		CodeSegmentStyle.fontSize = CodeSegmentStyle.font.fontSize; // just to be sure
 		state.ContentStyle = CodeSegmentStyle;
+		state.Theme = EditorGUIUtility.isProSkin ? CodeAreaTheme.DEFAULT_DARK : CodeAreaTheme.DEFAULT_LIGHT;
 		state.SetLines(input.Split('\n'));
 
 		Rect inputBounds = new(position.position + Padding, position.size - Padding * 2);
@@ -87,8 +82,8 @@ public class CodeArea {
 
 	private static void Draw(Rect position, string input, ParseResult parseResult, bool hasFocus, CodeAreaInfo state) {
 		Color oldColor = GUI.color;
-		FillRoundRect(position, BackgroundColor, 5);
-		DrawRoundRect(position, hasFocus ? BorderColorSelected : BorderColor, 2, 5);
+		FillRoundRect(position, state.Theme.BackgroundColor, 5);
+		DrawRoundRect(position, hasFocus ? state.Theme.SelectedBorderColor : state.Theme.NormalBorderColor, 2, 5);
 		Rect codeAreaBounds = new(Vector2.zero, GetCodeAreaSize(state, position.width));
 		state.scrollPosition = GUI.BeginScrollView(position, state.scrollPosition, codeAreaBounds);
 		Rect contentBounds = new(codeAreaBounds.position + Padding, codeAreaBounds.size - Padding * 2);
@@ -100,12 +95,16 @@ public class CodeArea {
 
 		if (hasFocus) {
 			Vector2 cursorPosition = state.GetPositionAtTextIndex(state.SelectionEndInternal);
-			FillRoundRect(new Rect(cursorPosition, new Vector2(1, state.LineHeight)), Color.white, 1);
+			
+			// draw a vertical line for the cursor
+			FillRoundRect(new Rect(cursorPosition, new Vector2(1, state.LineHeight)), state.Theme.CursorColor, 1);
+			
+			// if there is a selection, draw a colored rectangle over it (text is drawn later, so it acts as a background)
 			if (state.SelectionStart != state.SelectionEnd) {
 				string selection = input.Substring(state.SelectionStart, state.SelectionEnd - state.SelectionStart);
 				string[] lines = selection.Split('\n');
 				int index = state.SelectionStart;
-				GUI.color = SelectionColor;
+				GUI.color = state.Theme.SelectionTextBackgroundColor;
 				foreach (string line in lines) {
 					Vector2 selectionStartPosition = state.GetPositionAtTextIndex(index);
 					Vector2 selectionEndPosition = state.GetPositionAtTextIndex(index + line.Length);
@@ -173,8 +172,8 @@ public class CodeArea {
 
 			GUI.BeginClip(bounds);
 			bounds.position = Vector2.zero;
-			FillRoundRect(bounds, Color.white, 0);
-			DrawRoundRect(bounds, Color.black, 1, 0);
+			FillRoundRect(bounds, state.Theme.AutoCompleteNormalBackgroundColor, 0);
+			DrawRoundRect(bounds, state.Theme.AutoCompleteBorderColor, 1, 0);
 
 			int endIndex = Math.Min(state.AutoCompleteIndex + MaxAutoCompleteOptions, state.AutoCompleteOptions.Count);
 			for (int i = state.AutoCompleteIndex; i < endIndex; i++) {
@@ -182,7 +181,7 @@ public class CodeArea {
 				string fieldType = state.AutoCompleteTypes[i].Name;
 				float y = bounds.y + (i - state.AutoCompleteIndex) * state.LineHeight;
 
-				if (i == state.AutoCompleteSelection) FillRoundRect(new Rect(bounds.x, y, bounds.width, state.LineHeight), SelectionColor, 0);
+				if (i == state.AutoCompleteSelection) FillRoundRect(new Rect(bounds.x, y, bounds.width, state.LineHeight), state.Theme.AutoCompleteSelectedBackgroundColor, 0);
 
 				GUI.color = Color.black;
 				GUI.Label(new Rect(bounds.x, y, (longestFieldName + 3) * state.CharWidth, state.LineHeight), fieldName);
@@ -347,7 +346,7 @@ public class CodeArea {
 	}
 
 	private static void StylizedTextField(Vector2 position, string text, Expression expression, CodeAreaInfo state) {
-		GUI.color = GetExpressionColor(expression);
+		GUI.color = GetExpressionColor(expression, state.Theme);
 		GUI.Label(new Rect(position, new Vector2(text.Length * state.CharWidth, state.LineHeight)), text, state.ContentStyle);
 	}
 
@@ -473,17 +472,19 @@ public class CodeArea {
 		Handles.EndGUI();
 	}
 
-	private static Color GetExpressionColor(Expression expression) {
+	private static Color GetExpressionColor(Expression expression, CodeAreaTheme theme) {
 		if (expression == null) return Color.white;
 		switch (expression) {
 			case VariableExpression variableExpression:
 				bool? isValid = variableExpression.IsValid();
-				if (isValid == null) return Color.white;
-				return isValid.Value ? Color.green : Color.red;
-			case StringExpression stringExpression:
-				return Color.blue;
+				if (isValid == null) return theme.DefaultTextColor;
+				return isValid.Value ? theme.FieldTextColor : theme.ErrorTextColor;
+			case StringExpression:
+				return theme.StringTextColor;
+			case NumberExpression:
+				return theme.NumberTextColor;
 			default:
-				return Color.white;
+				return theme.DefaultTextColor;
 		}
 	}
 }
@@ -517,6 +518,8 @@ public class CodeAreaInfo : IComparer<Rect> {
 	public int LineHeight { get; private set; }
 	public int CharWidth { get; private set; }
 	public string[] Lines { get; private set; }
+	
+	public CodeAreaTheme Theme { get; set; }
 
 	public int Compare(Rect a, Rect b) {
 		return a.y == b.y ? a.x.CompareTo(b.x) : a.y.CompareTo(b.y);

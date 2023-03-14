@@ -13,6 +13,12 @@ public class CodeAreaTheme {
 	private static readonly Color HoverBorderUnityLight = new Color(0.643137f, 0.643137f, 0.643137f);
 	private static readonly Color SelectedBorderUnityDark = new Color(0.0f, 0.478431f, 0.8f);
 	private static readonly Color SelectedBorderUnityLight = new Color(0.0f, 0.478431f, 0.8f);
+	
+	private static readonly Color SelectionTextBackground = new(0.23f, 0.47f, 0.73f, 1);
+
+	private static readonly Color RiderAutoCompleteNormalBackground = new Color(0.9686f, 0.9686f, 0.9686f);
+	private static readonly Color RiderAutoCompleteSelectedBackground = new Color(0.77255f, 0.8745f, 0.988f);
+	private static readonly Color RiderAutoCompleteBorder = new Color(0.67058f, 0.67058f, 0.67058f);
 
 	public static readonly CodeAreaTheme DEFAULT_DARK = new CodeAreaTheme() { // non-Unity colors are taken from IntelliJ's 'Dark' Theme
 		BackgroundColor = BackgroundUnityDark,
@@ -28,8 +34,13 @@ public class CodeAreaTheme {
 		VariableTextColor = new Color(0.3137255f, 0.47058824f, 0.45490196f), // color taken from 'Type parameter'
 		FieldTextColor = new Color(0.59607846f, 0.4627451f, 0.6666667f),
 		ErrorTextColor = new Color(0.7372549f, 0.24705882f, 0.23529412f),
+		CursorColor = Color.white,
+		SelectionTextBackgroundColor = SelectionTextBackground,
 		ErrorUnderlineColor = new Color(0.7372549f, 0.24705882f, 0.23529412f),
-		WarningUnderlineColor = new Color(0.68235296f, 0.68235296f, 0.5019608f)
+		WarningUnderlineColor = new Color(0.68235296f, 0.68235296f, 0.5019608f),
+		AutoCompleteNormalBackgroundColor = RiderAutoCompleteNormalBackground,
+		AutoCompleteSelectedBackgroundColor = RiderAutoCompleteSelectedBackground,
+		AutoCompleteBorderColor = RiderAutoCompleteBorder
 	};
 
 	public static readonly CodeAreaTheme DEFAULT_LIGHT = new CodeAreaTheme() { // non-Unity colors are taken from IntelliJ's 'IntelliJ Light' Theme
@@ -46,8 +57,13 @@ public class CodeAreaTheme {
 		VariableTextColor = new Color(0.0f, 0.49411765f, 0.5411765f), // color taken from 'Type parameter'
 		FieldTextColor = new Color(0.5294118f, 0.0627451f, 0.5803922f),
 		ErrorTextColor = new Color(0.9607843f, 0.0f, 0.0f),
+		CursorColor = Color.black,
+		SelectionTextBackgroundColor = SelectionTextBackground,
 		ErrorUnderlineColor = new Color(1.0f, 0.0f, 0.0f),
-		WarningUnderlineColor = new Color(0.95686275f, 0.59607846f, 0.0627451f)
+		WarningUnderlineColor = new Color(0.95686275f, 0.59607846f, 0.0627451f),
+		AutoCompleteNormalBackgroundColor = RiderAutoCompleteNormalBackground,
+		AutoCompleteSelectedBackgroundColor = RiderAutoCompleteSelectedBackground,
+		AutoCompleteBorderColor = RiderAutoCompleteBorder
 	};
 	
 	
@@ -67,9 +83,16 @@ public class CodeAreaTheme {
 	public Color VariableTextColor { get; private set; }
 	public Color FieldTextColor { get; private set; }
 	public Color ErrorTextColor { get; private set; }
+	public Color CursorColor { get; private set; }
+	public Color SelectionTextBackgroundColor { get; private set; }
 	
 	// underline colors
 	public Color ErrorUnderlineColor { get; private set; }
 	public Color WarningUnderlineColor { get; private set; }
+	
+	// autocomplete colors
+	public Color AutoCompleteNormalBackgroundColor { get; private set; }
+	public Color AutoCompleteSelectedBackgroundColor { get; private set; }
+	public Color AutoCompleteBorderColor { get; private set; }
 }
 }
