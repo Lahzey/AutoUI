@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using AutoUI.CodeParser;
-using AutoUI.CodeParser.Expressions;
 using AutoUI.Data;
+using AutoUI.Parsing;
+using AutoUI.Parsing.Expressions;
 using UnityEditor;
 using UnityEngine;
 
@@ -447,11 +447,13 @@ public class CodeArea {
 	}
 
 	private static Font GetConsolasFont(int size) {
-		if (ConsolasFonts.ContainsKey(size) && ConsolasFonts[size] != null) return ConsolasFonts[size];
-
-		Font font = Font.CreateDynamicFontFromOSFont("Consolas", size);
+		Font font;
+		if (!ConsolasFonts.ContainsKey(size) || ConsolasFonts[size] == null) {
+			font = Font.CreateDynamicFontFromOSFont("Consolas", size);
+			ConsolasFonts[size] = font;
+		} else font = ConsolasFonts[size];
+		// according to Unity we should request the characters every frame to ensure they stay loaded
 		font.RequestCharactersInTexture(EnglishCharacters, size, FontStyle.Normal);
-		ConsolasFonts[size] = font;
 		return font;
 	}
 
@@ -554,6 +556,7 @@ public class CodeAreaInfo : IComparer<Rect> {
 				Expression previousExpression = GetExpressionAt(parseResult, textIndex - 1, out int expressionStart);
 				if (previousExpression is VariableExpression variableExpression) {
 					contextType = variableExpression.contextType;
+					Debug.Log($"Finding field prefix from {variableExpression.VariableName} at {expressionStart} to {textIndex}");
 					fieldPrefix = variableExpression.VariableName.Substring(0, textIndex - expressionStart);
 				}
 			}
@@ -600,10 +603,10 @@ public class CodeAreaInfo : IComparer<Rect> {
 	}
 
 	private static Expression GetExpressionAt(ParseResult parseResult, int index, out int expressionStart) {
-		Expression expression = parseResult.ExpressionsAtPositions.ContainsKey(index) ? parseResult.ExpressionsAtPositions[index] : null;
+		Expression expression = parseResult.ExpressionAtPosition(index);
 		if (expression != null)
 			for (int i = index - 1; i >= 0; i--)
-				if (parseResult.ExpressionsAtPositions[i] != expression) {
+				if (parseResult.ExpressionAtPosition(i) != expression) {
 					expressionStart = i + 1;
 					return expression; // early return to prevent setting to start
 				}

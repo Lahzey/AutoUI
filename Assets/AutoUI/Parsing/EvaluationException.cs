@@ -1,7 +1,7 @@
 ﻿using System;
-using AutoUI.CodeParser.Expressions;
+using AutoUI.Parsing.Expressions;
 
-namespace AutoUI.CodeParser {
+namespace AutoUI.Parsing {
 public class EvaluationException : Exception {
 	public EvaluationException(string message, Expression expressionToEvaluate) : base(message) {
 		ExpressionToEvaluate = expressionToEvaluate;

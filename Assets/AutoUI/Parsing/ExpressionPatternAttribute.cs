@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace AutoUI.CodeParser {
+namespace AutoUI.Parsing {
 [AttributeUsage(AttributeTargets.Class)]
 public class ExpressionPatternAttribute : Attribute {
 	private readonly object[] patternParts;
@@ -31,7 +31,7 @@ public class ExpressionPatternAttribute : Attribute {
 
 	public static string TypeOfPattern(Type type) {
 		// return a regex pattern that matches the type plus any additional type names after a trailing '>' that would denote a subtype
-		return Regex.Escape(TypeOfPlaceholder(type)) + @"(?:>[a-zA-Z0-9_]+)?";
+		return Regex.Escape(TypeOfPlaceholder(type)) + @"(?:>[a-zA-Z0-9_\.]+)?";
 	}
 
 	public static string TypeOfPlaceholder(Type type) {

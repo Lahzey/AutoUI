@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using AutoUI.CodeParser.Expressions;
+using AutoUI.Parsing.Expressions;
 
-namespace AutoUI.CodeParser {
+namespace AutoUI.Parsing {
 public class CodeParser {
 	private static readonly object INIT_LOCK = new();
 

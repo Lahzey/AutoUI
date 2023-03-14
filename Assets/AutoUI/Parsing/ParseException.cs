@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace AutoUI.CodeParser {
+namespace AutoUI.Parsing {
 public class ParseException : Exception {
 	private readonly List<int> endPositions = new();
 	private readonly List<string> messages = new();

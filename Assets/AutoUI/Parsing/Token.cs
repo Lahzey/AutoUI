@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace AutoUI.CodeParser {
+namespace AutoUI.Parsing {
 public abstract class Token : ParsedElement {
 	public static Token Get(string tokenString) {
 		Token[] tokens = tokenString.Length == 1 ? SingleCharToken.Values : MultiCharToken.Values;

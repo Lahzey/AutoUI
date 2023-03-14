@@ -1,12 +1,13 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using AutoUI.CodeParser.Expressions;
+using AutoUI.Parsing.Expressions;
 
-namespace AutoUI.CodeParser {
+namespace AutoUI.Parsing {
 public class ParseResult : IEnumerable<ParsedElement> {
 	private readonly List<ParsedElement> Elements = new();
 
 	public readonly Dictionary<int, Expression> ExpressionsAtPositions = new(); // a mapping used by inspector to determine which expression is at a given position
+	public Expression ExpressionAtPosition(int i) => ExpressionsAtPositions.TryGetValue(i, out Expression value) ? value : null;
 
 	// used for the inspector so it can know what certain source elements map to
 	public readonly string Source;

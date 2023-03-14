@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-using AutoUI.CodeParser;
+using AutoUI.Parsing;
 
 namespace AutoUI.Inspector {
 [Serializable]
@@ -23,7 +23,7 @@ public class CodeInput {
     /// <returns></returns>
     private static ParseResult GetParseResultAwait(string input) {
 		lock (parseResults) {
-			if (!parseResults.ContainsKey(input)) parseResults.Add(input, CodeParser.CodeParser.TryParse(input));
+			if (!parseResults.ContainsKey(input)) parseResults.Add(input, CodeParser.TryParse(input));
 			return parseResults[input];
 		}
 	}
@@ -48,7 +48,7 @@ public class CodeInput {
 		}
 
 		Thread thread = new(() => {
-			ParseResult result = CodeParser.CodeParser.TryParse(input);
+			ParseResult result = CodeParser.TryParse(input);
 			onResult?.Invoke(result);
 			lock (parseResults) {
 				if (!parseResults.ContainsKey(input)) parseResults.Add(input, result); // the contains key check should be redundant, but just in case

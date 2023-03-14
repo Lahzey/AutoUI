@@ -1,9 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using AutoUI.CodeParser;
-using AutoUI.CodeParser.Expressions;
 using AutoUI.Data;
 using AutoUI.Inspector;
+using AutoUI.Parsing;
+using AutoUI.Parsing.Expressions;
 using UnityEngine;
 
 namespace AutoUI.Constraints {

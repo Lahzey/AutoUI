@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using AutoUI.CodeParser.Expressions;
+using AutoUI.Parsing.Expressions;
 
-namespace AutoUI.CodeParser {
+namespace AutoUI.Parsing {
 public class PatternMatch {
 	private readonly string elementsString; // a string representation of the ParseResult elements with spaces between them
 

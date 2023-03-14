@@ -5,7 +5,8 @@ using UnityEngine;
 
 namespace AutoUI {
 public class RenderManager : MonoBehaviour {
-	public static readonly RenderManager Default;
+	private static RenderManager defaultInternal;
+	public static RenderManager Default => defaultInternal ? defaultInternal : InitDefaultRenderManager(); // apparently ?? does not use the unity null override, so we have to use ? : instead
 
 	[SerializeField] private float renderInterval = 0.1f;
 
@@ -14,10 +15,11 @@ public class RenderManager : MonoBehaviour {
 	private float storedDeltaTime = 0f;
 
 
-	static RenderManager() {
+	private static RenderManager InitDefaultRenderManager() {
 		// create object in scene to hold the default render manager
 		GameObject renderManagerObject = new("[AutoUI] Default RenderManager");
-		Default = renderManagerObject.AddComponent<RenderManager>();
+		defaultInternal = renderManagerObject.AddComponent<RenderManager>();
+		return defaultInternal;
 	}
 
 	private void Update() {

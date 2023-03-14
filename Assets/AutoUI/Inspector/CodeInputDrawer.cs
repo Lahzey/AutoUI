@@ -1,4 +1,5 @@
-﻿using AutoUI.CodeParser;
+﻿using System.Collections.Generic;
+using AutoUI.Parsing;
 using UnityEditor;
 using UnityEngine;
 
@@ -33,6 +34,17 @@ public class CodeInputDrawer : PropertyDrawer {
 
 	public override float GetPropertyHeight(SerializedProperty property, GUIContent label) {
 		return lastPreferredSize.y + lastLabelHeight;
+	}
+
+	private static string PrintTextureColors(Texture2D texture2D) {
+		// get each unique color in the texture and append it to a string
+		if (texture2D == null) return "null";
+		Color[] colors = texture2D.GetPixels();
+		List<Color> uniqueColors = new List<Color>();
+		foreach (Color color in colors)
+			if (!uniqueColors.Contains(color))
+				uniqueColors.Add(color);
+		return string.Join(", ", colors);
 	}
 }
 }

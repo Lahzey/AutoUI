@@ -1,7 +1,7 @@
-﻿using AutoUI.CodeParser;
-using AutoUI.CodeParser.Expressions;
-using AutoUI.Data;
+﻿using AutoUI.Data;
 using AutoUI.Inspector;
+using AutoUI.Parsing;
+using AutoUI.Parsing.Expressions;
 using UnityEngine;
 using UnityEngine.UI;
 

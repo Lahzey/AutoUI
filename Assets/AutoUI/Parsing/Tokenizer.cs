@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace AutoUI.CodeParser {
+namespace AutoUI.Parsing {
 public class Tokenizer {
 	public static ParseResult Tokenize(string source) {
 		ParseResult parseResult = new(source);

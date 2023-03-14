@@ -2,7 +2,7 @@
 using AutoUI.Data;
 using UnityEngine;
 
-namespace AutoUI.CodeParser.Expressions {
+namespace AutoUI.Parsing.Expressions {
 public abstract class CalculationExpression : Expression {
 	public static object PerformOperation(object a, object b, char operation, Expression expressionRef) {
 		int level = 0; // 0 = short, 1 = int, 2 = long, 3 = float, 4 = double (yes, long * float = float, not double)

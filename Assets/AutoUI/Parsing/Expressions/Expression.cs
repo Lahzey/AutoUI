@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using AutoUI.Data;
 
-namespace AutoUI.CodeParser.Expressions {
+namespace AutoUI.Parsing.Expressions {
 public abstract class Expression : ParsedElement {
 	protected object[] args;
 

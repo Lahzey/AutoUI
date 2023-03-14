@@ -1,7 +1,7 @@
 ﻿using System;
 using AutoUI.Data;
 
-namespace AutoUI.CodeParser.Expressions {
+namespace AutoUI.Parsing.Expressions {
 [ExpressionPattern(typeof(Expression), @"==", typeof(Expression))]
 [PatternPriority(-100)]
 public class EqualsExpression : Expression {
