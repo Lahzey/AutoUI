@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using AutoUI.Parsing.Expressions;
+using UnityEngine;
 
 namespace AutoUI.Inspector {
 public class CodeAreaTheme {
@@ -94,5 +95,24 @@ public class CodeAreaTheme {
 	public Color AutoCompleteNormalBackgroundColor { get; private set; }
 	public Color AutoCompleteSelectedBackgroundColor { get; private set; }
 	public Color AutoCompleteBorderColor { get; private set; }
+	
+	
+	
+
+	public Color GetExpressionColor(Expression expression) {
+		if (expression == null) return Color.white;
+		switch (expression) {
+			case VariableExpression variableExpression:
+				bool? isValid = variableExpression.IsValid();
+				if (isValid == null) return DefaultTextColor;
+				return isValid.Value ? variableExpression.contextType == null ? VariableTextColor : FieldTextColor : ErrorTextColor;
+			case StringExpression:
+				return StringTextColor;
+			case NumberExpression:
+				return NumberTextColor;
+			default:
+				return DefaultTextColor;
+		}
+	}
 }
 }

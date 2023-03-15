@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using AutoUI.Data;
 using AutoUI.Parsing;
 using AutoUI.Parsing.Expressions;
 using UnityEditor;
@@ -11,15 +9,10 @@ using UnityEngine;
 namespace AutoUI.Inspector {
 public class CodeArea {
 	private static readonly string EnglishCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~ \t\n\r";
+	private static readonly Dictionary<int, Font> ConsolasFonts = new(); // <size, font>
 
 	private static readonly Vector2 Padding = new(5, 2); // left, top and right, bottom both have this padding
-
 	public static readonly int MaxAutoCompleteOptions = 5;
-
-	// cached assets
-	private static Texture2D SquigglyLineTexture;
-	private static readonly Dictionary<int, Texture2D> CircleTextures = new(); // <radius, texture> all of them are white
-	private static readonly Dictionary<int, Font> ConsolasFonts = new(); // <size, font>
 
 	private static readonly GUIStyle CodeSegmentStyle;
 
@@ -34,7 +27,7 @@ public class CodeArea {
 	public static string ScrolledArea(Rect position, string input, ParseResult parseResult, GUIStyle style, out Vector2 preferredSize) {
 		int controlId = GUIUtility.GetControlID(FocusType.Keyboard);
 		bool hasFocus = GUIUtility.keyboardControl == controlId;
-		CodeAreaInfo state = (CodeAreaInfo)GUIUtility.GetStateObject(typeof(CodeAreaInfo), controlId);
+		CodeAreaState state = (CodeAreaState)GUIUtility.GetStateObject(typeof(CodeAreaState), controlId);
 
 		CodeSegmentStyle.font = GetConsolasFont(style.fontSize > 0 ? style.fontSize : style.font.fontSize);
 		CodeSegmentStyle.fontSize = CodeSegmentStyle.font.fontSize; // just to be sure
@@ -80,10 +73,10 @@ public class CodeArea {
 		return input;
 	}
 
-	private static void Draw(Rect position, string input, ParseResult parseResult, bool hasFocus, CodeAreaInfo state) {
+	private static void Draw(Rect position, string input, ParseResult parseResult, bool hasFocus, CodeAreaState state) {
 		Color oldColor = GUI.color;
-		FillRoundRect(position, state.Theme.BackgroundColor, 5);
-		DrawRoundRect(position, hasFocus ? state.Theme.SelectedBorderColor : state.Theme.NormalBorderColor, 2, 5);
+		GUIDrawUtils.FillRoundRect(position, state.Theme.BackgroundColor, 5);
+		GUIDrawUtils.DrawRoundRect(position, hasFocus ? state.Theme.SelectedBorderColor : state.Theme.NormalBorderColor, 2, 5);
 		Rect codeAreaBounds = new(Vector2.zero, GetCodeAreaSize(state, position.width));
 		state.scrollPosition = GUI.BeginScrollView(position, state.scrollPosition, codeAreaBounds);
 		Rect contentBounds = new(codeAreaBounds.position + Padding, codeAreaBounds.size - Padding * 2);
@@ -97,7 +90,7 @@ public class CodeArea {
 			Vector2 cursorPosition = state.GetPositionAtTextIndex(state.SelectionEndInternal);
 			
 			// draw a vertical line for the cursor
-			FillRoundRect(new Rect(cursorPosition, new Vector2(1, state.LineHeight)), state.Theme.CursorColor, 1);
+			GUIDrawUtils.FillRoundRect(new Rect(cursorPosition, new Vector2(1, state.LineHeight)), state.Theme.CursorColor, 1);
 			
 			// if there is a selection, draw a colored rectangle over it (text is drawn later, so it acts as a background)
 			if (state.SelectionStart != state.SelectionEnd) {
@@ -121,7 +114,7 @@ public class CodeArea {
 		if (parseResult != null && parseResult.Exception != null)
 			for (int i = 0; i < parseResult.Exception.MessageCount(); i++) {
 				Debug.LogWarning("Error in Code Input Field: " + parseResult.Exception.GetMessage(i));
-				DrawSquigglyLine(parseResult.Exception.GetStartPosition(i), parseResult.Exception.GetEndPosition(i), state);
+				GUIDrawUtils.DrawSquigglyLine(parseResult.Exception.GetStartPosition(i), parseResult.Exception.GetEndPosition(i), state);
 			}
 
 		#endregion
@@ -172,8 +165,8 @@ public class CodeArea {
 
 			GUI.BeginClip(bounds);
 			bounds.position = Vector2.zero;
-			FillRoundRect(bounds, state.Theme.AutoCompleteNormalBackgroundColor, 0);
-			DrawRoundRect(bounds, state.Theme.AutoCompleteBorderColor, 1, 0);
+			GUIDrawUtils.FillRoundRect(bounds, state.Theme.AutoCompleteNormalBackgroundColor, 0);
+			GUIDrawUtils.DrawRoundRect(bounds, state.Theme.AutoCompleteBorderColor, 1, 0);
 
 			int endIndex = Math.Min(state.AutoCompleteIndex + MaxAutoCompleteOptions, state.AutoCompleteOptions.Count);
 			for (int i = state.AutoCompleteIndex; i < endIndex; i++) {
@@ -181,7 +174,7 @@ public class CodeArea {
 				string fieldType = state.AutoCompleteTypes[i].Name;
 				float y = bounds.y + (i - state.AutoCompleteIndex) * state.LineHeight;
 
-				if (i == state.AutoCompleteSelection) FillRoundRect(new Rect(bounds.x, y, bounds.width, state.LineHeight), state.Theme.AutoCompleteSelectedBackgroundColor, 0);
+				if (i == state.AutoCompleteSelection) GUIDrawUtils.FillRoundRect(new Rect(bounds.x, y, bounds.width, state.LineHeight), state.Theme.AutoCompleteSelectedBackgroundColor, 0);
 
 				GUI.color = Color.black;
 				GUI.Label(new Rect(bounds.x, y, (longestFieldName + 3) * state.CharWidth, state.LineHeight), fieldName);
@@ -197,7 +190,7 @@ public class CodeArea {
 		GUI.color = oldColor;
 	}
 
-	private static string HandleKeyDownEvent(string input, CodeAreaInfo state, out bool canShowAutoComplete) {
+	private static string HandleKeyDownEvent(string input, CodeAreaState state, out bool canShowAutoComplete) {
 		// ok, this is so stupid, on Windows we get a correct KeyCode with a null key char and a None KeyCode with the correct char for each input character
 		// so in a press of 'a' would result in the events [KeyCode.A, char \0] and [KeyCode.None, char 'a']
 		// char \0 is very problematic because inserting it into a string will end that string at that position
@@ -331,119 +324,26 @@ public class CodeArea {
 		return input;
 	}
 
-	private static string ReplaceSelection(string input, CodeAreaInfo state, string replacement) {
+	private static string ReplaceSelection(string input, CodeAreaState state, string replacement) {
 		if (state.SelectionStart != state.SelectionEnd) input = input.Remove(state.SelectionStart, state.SelectionEnd - state.SelectionStart);
 		input = input.Insert(state.SelectionStart, replacement);
 		state.SetCursor(state.SelectionStart + replacement.Length);
 		return input;
 	}
 
-	private static Vector2 GetCodeAreaSize(CodeAreaInfo state, float minWidth) {
+	private static Vector2 GetCodeAreaSize(CodeAreaState state, float minWidth) {
 		int maxLineLength = state.LineLengths.Prepend(0).Max();
 		Vector2 size = new Vector2(maxLineLength * state.CharWidth, state.Lines.Length * state.LineHeight) + Padding * 2;
 		if (size.x < minWidth) size.x = minWidth;
 		return size;
 	}
 
-	private static void StylizedTextField(Vector2 position, string text, Expression expression, CodeAreaInfo state) {
-		GUI.color = GetExpressionColor(expression, state.Theme);
+	private static void StylizedTextField(Vector2 position, string text, Expression expression, CodeAreaState state) {
+		GUI.color = state.Theme.GetExpressionColor(expression);
 		GUI.Label(new Rect(position, new Vector2(text.Length * state.CharWidth, state.LineHeight)), text, state.ContentStyle);
 	}
 
-	private static void DrawSquigglyLine(int startPos, int endPos, CodeAreaInfo state) {
-		GUI.color = Color.white;
-
-		Texture2D squigglyLineTexture = GetSquigglyLineTexture();
-
-		int lineStart = 0;
-		for (int i = 0; i < state.Lines.Length; i++) {
-			int lineLength = state.LineLengths[i];
-			if (startPos < lineStart + lineLength) {
-				int end = Math.Min(endPos, lineStart + lineLength);
-				Rect position = new((startPos - lineStart) * state.CharWidth, (i + 1) * state.LineHeight - squigglyLineTexture.height, (end - startPos) * state.CharWidth, squigglyLineTexture.height);
-				GUI.DrawTextureWithTexCoords(position, squigglyLineTexture, new Rect(0, 0, position.width / squigglyLineTexture.width, 1));
-				startPos = end + 1; // +1 for the newline character
-				if (endPos == end) break;
-			}
-
-			lineStart += lineLength + 1;
-		}
-	}
-
 	// the draw functions using handles are generated by ChatGPT
-	private static void DrawRoundRect(Rect rect, Color color, float width, float radius) {
-		// Draw the four sides
-		DrawLine(new Vector2(rect.x + radius, rect.y), new Vector2(rect.x + rect.width - radius, rect.y), color, width);
-		DrawLine(new Vector2(rect.x + rect.width, rect.y + radius), new Vector2(rect.x + rect.width, rect.y + rect.height - radius), color, width);
-		DrawLine(new Vector2(rect.x + rect.width - radius, rect.y + rect.height), new Vector2(rect.x + radius, rect.y + rect.height), color, width);
-		DrawLine(new Vector2(rect.x, rect.y + rect.height - radius), new Vector2(rect.x, rect.y + radius), color, width);
-
-		if (radius <= 0) return;
-
-		// Draw the corners
-		DrawArc(new Vector2(rect.x + radius, rect.y + radius), radius, 180f, 270f, color, width);
-		DrawArc(new Vector2(rect.x + rect.width - radius, rect.y + radius), radius, 270f, 360f, color, width);
-		DrawArc(new Vector2(rect.x + rect.width - radius, rect.y + rect.height - radius), radius, 0f, 90f, color, width);
-		DrawArc(new Vector2(rect.x + radius, rect.y + rect.height - radius), radius, 90f, 180f, color, width);
-	}
-
-	private static void FillRoundRect(Rect rect, Color color, float radius) {
-		Color oldColor = GUI.color;
-		GUI.color = color;
-
-		if (radius > 0) {
-			Texture2D circle = GetCircleTexture((int)radius);
-
-			// Draw the corners by just drawing different parts of the same circle texture (texture coords are from bottom to top, while UI coords are from top to bottom)
-			GUI.DrawTextureWithTexCoords(new Rect(rect.x, rect.y, radius, radius), circle, new Rect(0, 0.5f, 0.5f, 0.5f));
-			GUI.DrawTextureWithTexCoords(new Rect(rect.xMax - radius, rect.y, radius, radius), circle, new Rect(0.5f, 0.5f, 0.5f, 0.5f));
-			GUI.DrawTextureWithTexCoords(new Rect(rect.x, rect.yMax - radius, radius, radius), circle, new Rect(0, 0, 0.5f, 0.5f));
-			GUI.DrawTextureWithTexCoords(new Rect(rect.xMax - radius, rect.yMax - radius, radius, radius), circle, new Rect(0.5f, 0, 0.5f, 0.5f));
-
-			// Draw the sides (the -1 and +2 are to fix line gaps, probably caused by floating point inaccuracies)
-			GUI.DrawTexture(new Rect(rect.x + radius - 1, rect.y, rect.width + 2 - 2 * radius, radius), EditorGUIUtility.whiteTexture);
-			GUI.DrawTexture(new Rect(rect.x + radius - 1, rect.yMax - radius, rect.width + 2 - 2 * radius, radius), EditorGUIUtility.whiteTexture);
-			GUI.DrawTexture(new Rect(rect.x, rect.y + radius, radius, rect.height - 2 * radius), EditorGUIUtility.whiteTexture);
-			GUI.DrawTexture(new Rect(rect.xMax - radius, rect.y + radius, radius, rect.height - 2 * radius), EditorGUIUtility.whiteTexture);
-		}
-
-		// Draw the center
-		GUI.DrawTexture(new Rect(rect.x + radius - 1, rect.y + radius, rect.width + 2 - 2 * radius, rect.height - 2 * radius), EditorGUIUtility.whiteTexture);
-
-		GUI.color = oldColor;
-	}
-
-	private static Texture2D GetCircleTexture(int radius) {
-		if (CircleTextures.ContainsKey(radius) && CircleTextures[radius] != null) return CircleTextures[radius];
-
-		int diameter = 2 * radius;
-		Vector2 center = new(radius, radius);
-		Texture2D texture = new(diameter, diameter);
-		for (int x = 0; x < diameter; x++)
-		for (int y = 0; y < diameter; y++) {
-			float distance = Vector2.Distance(new Vector2(x, y), center);
-			texture.SetPixel(x, y, distance <= radius ? Color.white : Color.clear);
-		}
-
-		texture.Apply();
-		CircleTextures[radius] = texture;
-		return texture;
-	}
-
-	private static Texture2D GetSquigglyLineTexture() {
-		if (SquigglyLineTexture != null) return SquigglyLineTexture;
-
-
-		SquigglyLineTexture = new Texture2D(4, 3);
-		SquigglyLineTexture.SetPixels(new[] {
-			Color.clear, Color.red, Color.clear, Color.clear,
-			Color.red, new(0.85882352941f, 0, 0, 0.25f), Color.red, Color.clear,
-			Color.clear, Color.clear, Color.clear, Color.red
-		});
-		SquigglyLineTexture.Apply(false);
-		SquigglyLineTexture.wrapMode = TextureWrapMode.Repeat;
-		return SquigglyLineTexture;
-	}
 
 	private static Font GetConsolasFont(int size) {
 		Font font;
@@ -454,194 +354,6 @@ public class CodeArea {
 		// according to Unity we should request the characters every frame to ensure they stay loaded
 		font.RequestCharactersInTexture(EnglishCharacters, size, FontStyle.Normal);
 		return font;
-	}
-
-	private static void DrawLine(Vector2 start, Vector2 end, Color color, float width) {
-		Handles.BeginGUI();
-		Handles.color = color;
-		Handles.DrawAAPolyLine(width, start, end);
-		Handles.EndGUI();
-	}
-
-	private static void DrawArc(Vector2 center, float radius, float startAngle, float endAngle, Color color, float width) {
-		Handles.BeginGUI();
-		Handles.color = color;
-		Vector3 from = new(Mathf.Cos(Mathf.Deg2Rad * startAngle), Mathf.Sin(Mathf.Deg2Rad * startAngle), 0f);
-		Vector3 to = new(Mathf.Cos(Mathf.Deg2Rad * endAngle), Mathf.Sin(Mathf.Deg2Rad * endAngle), 0f);
-		Handles.DrawWireArc(center, Vector3.forward, from, endAngle - startAngle, radius);
-		Handles.EndGUI();
-	}
-
-	private static Color GetExpressionColor(Expression expression, CodeAreaTheme theme) {
-		if (expression == null) return Color.white;
-		switch (expression) {
-			case VariableExpression variableExpression:
-				bool? isValid = variableExpression.IsValid();
-				if (isValid == null) return theme.DefaultTextColor;
-				return isValid.Value ? theme.FieldTextColor : theme.ErrorTextColor;
-			case StringExpression:
-				return theme.StringTextColor;
-			case NumberExpression:
-				return theme.NumberTextColor;
-			default:
-				return theme.DefaultTextColor;
-		}
-	}
-}
-
-public class CodeAreaInfo : IComparer<Rect> {
-	public readonly List<string> AutoCompleteOptions = new();
-	public readonly List<string> AutoCompleteTextInserts = new();
-	public readonly List<Type> AutoCompleteTypes = new();
-	public readonly List<int> LineLengths = new();
-
-	private GUIStyle _contentStyle;
-	public Vector2 scrollPosition;
-	public int SelectionEndInternal;
-
-	public int SelectionStartInternal;
-	public int SelectionStart => Mathf.Min(SelectionStartInternal, SelectionEndInternal);
-	public int SelectionEnd => Mathf.Max(SelectionStartInternal, SelectionEndInternal);
-	public bool ShowAutoComplete { get; private set; }
-	public int AutoCompleteIndex { get; set; }
-	public int AutoCompleteSelection { get; set; }
-
-	public GUIStyle ContentStyle {
-		get => _contentStyle;
-		set {
-			_contentStyle = value;
-			LineHeight = ContentStyle.font.lineHeight;
-			CharWidth = ContentStyle.font.characterInfo[0].advance; // doesn't matter which character, all consolas chars are the same width
-		}
-	}
-
-	public int LineHeight { get; private set; }
-	public int CharWidth { get; private set; }
-	public string[] Lines { get; private set; }
-	
-	public CodeAreaTheme Theme { get; set; }
-
-	public int Compare(Rect a, Rect b) {
-		return a.y == b.y ? a.x.CompareTo(b.x) : a.y.CompareTo(b.y);
-	}
-
-
-	public void SetCursor(int index) {
-		SelectionStartInternal = index;
-		SelectionEndInternal = index;
-	}
-
-	public void ClampSelection(int inputLength) {
-		SelectionStartInternal = Math.Clamp(SelectionStartInternal, 0, inputLength);
-		SelectionEndInternal = Math.Clamp(SelectionEndInternal, 0, inputLength);
-	}
-
-	public void SetLines(string[] lines) {
-		Lines = lines;
-		LineLengths.Clear();
-		foreach (string line in lines) LineLengths.Add(line.Length);
-	}
-
-	public void CreateAutoComplete(string input) {
-		HideAutoComplete();
-
-		CodeInput.GetParseResult(input, parseResult => {
-			int textIndex = SelectionStart;
-
-			Type contextType = null;
-			string fieldPrefix = null;
-
-			if (textIndex > 0 && parseResult.Source[textIndex - 1] == '.') {
-				Expression contextExpression = GetExpressionAt(parseResult, textIndex - 2, out int expressionStart);
-				if (contextExpression != null) contextType = contextExpression.GetExpectedType();
-			}
-			else {
-				Expression previousExpression = GetExpressionAt(parseResult, textIndex - 1, out int expressionStart);
-				if (previousExpression is VariableExpression variableExpression) {
-					contextType = variableExpression.contextType;
-					Debug.Log($"Finding field prefix from {variableExpression.VariableName} at {expressionStart} to {textIndex}");
-					fieldPrefix = variableExpression.VariableName.Substring(0, textIndex - expressionStart);
-				}
-			}
-
-
-			if (contextType == null) // null means we look at the data store
-			{
-				foreach (DataKeyBase dataKey in DataKeyBase.GetAll())
-					if (fieldPrefix == null || (dataKey.Key.StartsWith(fieldPrefix) && dataKey.Key != fieldPrefix)) {
-						AutoCompleteOptions.Add(dataKey.Key);
-						AutoCompleteTypes.Add(dataKey.Type);
-						AutoCompleteTextInserts.Add(dataKey.Key[(fieldPrefix?.Length ?? 0)..]);
-					}
-
-				ShowAutoComplete = true;
-			}
-			else if (contextType != typeof(object)) // not gonna show autocomplete for object, as this indicates that the type is unknown
-			{
-				foreach (FieldInfo fieldInfo in contextType.GetFields())
-					if (fieldPrefix == null || (fieldInfo.Name.StartsWith(fieldPrefix) && fieldInfo.Name != fieldPrefix)) {
-						AutoCompleteOptions.Add(fieldInfo.Name);
-						AutoCompleteTypes.Add(fieldInfo.FieldType);
-						AutoCompleteTextInserts.Add(fieldInfo.Name[(fieldPrefix?.Length ?? 0)..]);
-					}
-
-				foreach (PropertyInfo propertyInfo in contextType.GetProperties())
-					if ((propertyInfo.GetMethod.IsPublic && fieldPrefix == null) || (propertyInfo.Name.StartsWith(fieldPrefix) && propertyInfo.Name != fieldPrefix)) {
-						AutoCompleteOptions.Add(propertyInfo.Name);
-						AutoCompleteTypes.Add(propertyInfo.PropertyType);
-						AutoCompleteTextInserts.Add(propertyInfo.Name[(fieldPrefix?.Length ?? 0)..]);
-					}
-
-				ShowAutoComplete = AutoCompleteOptions.Count > 0;
-			}
-		});
-	}
-
-	public void HideAutoComplete() {
-		ShowAutoComplete = false;
-		AutoCompleteOptions.Clear();
-		AutoCompleteTypes.Clear();
-		AutoCompleteTextInserts.Clear();
-		AutoCompleteIndex = 0;
-	}
-
-	private static Expression GetExpressionAt(ParseResult parseResult, int index, out int expressionStart) {
-		Expression expression = parseResult.ExpressionAtPosition(index);
-		if (expression != null)
-			for (int i = index - 1; i >= 0; i--)
-				if (parseResult.ExpressionAtPosition(i) != expression) {
-					expressionStart = i + 1;
-					return expression; // early return to prevent setting to start
-				}
-
-		expressionStart = 0;
-		return expression;
-	}
-
-	public int GetTextIndexAtPosition(Vector2 position) {
-		int lineIndex = Math.Clamp(Mathf.FloorToInt(position.y / LineHeight), 0, LineLengths.Count - 1);
-		int lineLength = LineLengths[lineIndex];
-		int charIndex = Math.Clamp(Mathf.RoundToInt(position.x / CharWidth), 0, lineLength);
-		int textIndex = 0;
-		for (int i = 0; i < lineIndex; i++) textIndex += LineLengths[i] + 1; // +1 for newline
-		textIndex += charIndex;
-		return textIndex;
-	}
-
-	public Vector2 GetPositionAtTextIndex(int textIndex) {
-		int index = 0;
-		for (int i = 0; i < LineLengths.Count; i++) {
-			int lineLength = LineLengths[i];
-			if (textIndex <= index + lineLength) // textIndex == index+lineLength means position is to the right of the last character on the line
-			{
-				int indexInLine = textIndex - index;
-				return new Vector2(indexInLine * CharWidth, i * LineHeight);
-			}
-
-			index += lineLength + 1; // +1 for newline
-		}
-
-		return new Vector2(0, LineLengths.Count * LineHeight); // shouldn't happen, but default return is required
 	}
 }
 }
