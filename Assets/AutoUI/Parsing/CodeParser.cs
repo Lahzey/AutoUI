@@ -4,7 +4,7 @@ using System.Linq;
 using AutoUI.Parsing.Expressions;
 
 namespace AutoUI.Parsing {
-public class CodeParser {
+public static class CodeParser {
 	private static readonly object INIT_LOCK = new object();
 
 	private static Dictionary<string, Type> valueTypePatterns;
@@ -20,22 +20,23 @@ public class CodeParser {
 			select type;
 		valueTypePatterns = new Dictionary<string, Type>();
 		valueTypePatternPriorities = new Dictionary<string, int>();
-		foreach (Type type in subclasses)
-			// get ValuePattern attribute from type
-		foreach (ExpressionPatternAttribute patternAttribute in type.GetCustomAttributes(typeof(ExpressionPatternAttribute), false)) {
-			string pattern = patternAttribute.GetPattern();
-			string[] patternArray = pattern.Split(' ');
-			if (valueTypePatterns.ContainsKey(pattern))
-				throw new ArgumentException($"Duplicate use of pattern {pattern} by {type.Name} and {valueTypePatterns[pattern].Name}.");
-			valueTypePatterns.Add(pattern, type);
+        foreach (Type type in subclasses) {
+            // get ValuePattern attribute from type
+            foreach (ExpressionPatternAttribute patternAttribute in type.GetCustomAttributes(typeof(ExpressionPatternAttribute), false)) {
+                string pattern = patternAttribute.GetPattern();
+                string[] patternArray = pattern.Split(' ');
+                if (valueTypePatterns.ContainsKey(pattern))
+                    throw new ArgumentException($"Duplicate use of pattern {pattern} by {type.Name} and {valueTypePatterns[pattern].Name}.");
+                valueTypePatterns.Add(pattern, type);
 
-			// get priority of pattern from PatternPriority attribute (or 0 if not specified)
-			int priority = 0;
-			type.GetCustomAttributes(typeof(PatternPriorityAttribute), false).ToList().ForEach(a => priority = ((PatternPriorityAttribute)a).priority);
-			valueTypePatternPriorities.Add(pattern, priority);
-		}
+                // get priority of pattern from PatternPriority attribute (or 0 if not specified)
+                int priority = 0;
+                type.GetCustomAttributes(typeof(PatternPriorityAttribute), false).ToList().ForEach(a => priority = ((PatternPriorityAttribute)a).priority);
+                valueTypePatternPriorities.Add(pattern, priority);
+            }
+        }
 
-		patternOrder = valueTypePatterns.Keys.ToList();
+        patternOrder = valueTypePatterns.Keys.ToList();
 		patternOrder = patternOrder.OrderByDescending(i => valueTypePatternPriorities[i]).ToList();
 	}
 
