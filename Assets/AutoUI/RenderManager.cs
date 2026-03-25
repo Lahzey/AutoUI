@@ -10,14 +10,14 @@ public class RenderManager : MonoBehaviour {
 
 	[SerializeField] private float renderInterval = 0.1f;
 
-	public readonly List<UINode> rootUINodes = new();
-	private readonly Dictionary<int, UINode> uiNodeMapping = new(); // maps gameObject instanceIDs to UINodes
+	public readonly List<UINode> rootUINodes = new List<UINode>();
+	private readonly Dictionary<int, UINode> uiNodeMapping = new Dictionary<int, UINode>(); // maps gameObject instanceIDs to UINodes
 	private float storedDeltaTime = 0f;
 
 
 	private static RenderManager InitDefaultRenderManager() {
 		// create object in scene to hold the default render manager
-		GameObject renderManagerObject = new("[AutoUI] Default RenderManager");
+		GameObject renderManagerObject = new GameObject("[AutoUI] Default RenderManager");
 		defaultInternal = renderManagerObject.AddComponent<RenderManager>();
 		return defaultInternal;
 	}
@@ -43,7 +43,7 @@ public class RenderManager : MonoBehaviour {
 	}
 
 	public UINode AddUINode(GameObject gameObject) {
-		UINode uiNode = new(gameObject);
+		UINode uiNode = new UINode(gameObject);
 		uiNodeMapping.Add(uiNode.instanceId, uiNode);
 
 		foreach (UINode rootUINode in rootUINodes.ToList()) // use ToList() to prevent modifying the list while iterating over it, not efficient but that is not crucial here

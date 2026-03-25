@@ -1,6 +1,6 @@
 ﻿namespace AutoUI.Data {
 public class DataStore : DataContext {
-	public static readonly DataStore INSTANCE = new();
+	public static readonly DataStore INSTANCE = new DataStore();
 
 	private DataStore() : base(null) { }
 

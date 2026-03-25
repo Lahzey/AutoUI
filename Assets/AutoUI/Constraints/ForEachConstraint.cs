@@ -8,16 +8,16 @@ using UnityEngine;
 
 namespace AutoUI.Constraints {
 public class ForEachConstraint : AutoUIConstraint {
-	private static readonly List<object> EMPTY_LIST = new();
+	private static readonly List<object> EMPTY_LIST = new List<object>();
 
 	[SerializeField] private string varName;
 	[SerializeField] private CodeInput collectionConstraint;
-	private readonly Dictionary<string, int> childIndices = new(); // the UINodes passed as children may not be direct children, so getting the index requires calculation which we cash here
-	private readonly List<GameObject> children = new();
+	private readonly Dictionary<string, int> childIndices = new Dictionary<string, int>(); // the UINodes passed as children may not be direct children, so getting the index requires calculation which we cash here
+	private readonly List<GameObject> children = new List<GameObject>();
 
 	private GameObject[] childTemplates; // the initial children on startup, these game objects will remain disabled so we can use them as templates (a set of these for each element in the list)
 
-	private readonly List<object> collectionContents = new();
+	private readonly List<object> collectionContents = new List<object>();
 
 	private Expression collectionExpression;
 

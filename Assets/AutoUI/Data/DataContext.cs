@@ -2,7 +2,7 @@
 
 namespace AutoUI.Data {
 public class DataContext {
-	private readonly Dictionary<ulong, object> data = new();
+	private readonly Dictionary<ulong, object> data = new Dictionary<ulong, object>();
 
 	private readonly DataContext parent;
 

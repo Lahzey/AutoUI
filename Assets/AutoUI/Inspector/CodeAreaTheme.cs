@@ -15,7 +15,7 @@ public class CodeAreaTheme {
 	private static readonly Color SELECTED_BORDER_UNITY_DARK = new Color(0.0f, 0.478431f, 0.8f);
 	private static readonly Color SELECTED_BORDER_UNITY_LIGHT = new Color(0.0f, 0.478431f, 0.8f);
 	
-	private static readonly Color SELECTION_TEXT_BACKGROUND = new(0.23f, 0.47f, 0.73f, 1);
+	private static readonly Color SELECTION_TEXT_BACKGROUND = new Color(0.23f, 0.47f, 0.73f, 1);
 
 	private static readonly Color RIDER_AUTO_COMPLETE_NORMAL_BACKGROUND = new Color(0.9686f, 0.9686f, 0.9686f);
 	private static readonly Color RIDER_AUTO_COMPLETE_SELECTED_BACKGROUND = new Color(0.77255f, 0.8745f, 0.988f);

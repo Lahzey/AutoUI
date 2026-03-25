@@ -3,9 +3,9 @@
 namespace AutoUI.Parsing {
 public class Tokenizer {
 	public static ParseResult Tokenize(string source) {
-		ParseResult parseResult = new(source);
+		ParseResult parseResult = new ParseResult(source);
 
-		StringBuilder currentText = new();
+		StringBuilder currentText = new StringBuilder();
 		bool inString = false;
 
 		for (int i = 0; i < source.Length; i++) {

@@ -53,7 +53,7 @@ public class PatternMatch {
 		if (match == null) return false; // no matches found
 
 		// create a new PatternMatch object with the best match
-		PatternMatch patternMatch = new(match, parseResult, elementsString);
+		PatternMatch patternMatch = new PatternMatch(match, parseResult, elementsString);
 
 		// replaces the matched elements with a new instance of the matched type
 		patternMatch.ReplaceMatchedElements(matchedType);
@@ -68,7 +68,7 @@ public class PatternMatch {
 	}
 
 	private List<object> MatchGroup(int groupIndex) {
-		List<object> matchedElements = new();
+		List<object> matchedElements = new List<object>();
 		Group group = match.Groups[groupIndex];
 		Group nextGroup = match.Groups.Count > groupIndex + 1 ? match.Groups[groupIndex + 1] : null;
 		int groupEnd = group.Index + group.Length;

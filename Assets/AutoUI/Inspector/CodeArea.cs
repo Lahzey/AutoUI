@@ -9,9 +9,9 @@ using UnityEngine;
 namespace AutoUI.Inspector {
 public class CodeArea {
 	private static readonly string ENGLISH_CHARACTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~ \t\n\r";
-	private static readonly Dictionary<int, Font> CONSOLAS_FONTS = new(); // <size, font>
+	private static readonly Dictionary<int, Font> CONSOLAS_FONTS = new Dictionary<int, Font>(); // <size, font>
 
-	private static readonly Vector2 PADDING = new(5, 2); // left, top and right, bottom both have this padding
+	private static readonly Vector2 PADDING = new Vector2(5, 2); // left, top and right, bottom both have this padding
 	public static readonly int MAX_AUTO_COMPLETE_OPTIONS = 5;
 
 	private static readonly GUIStyle CODE_SEGMENT_STYLE;
@@ -35,7 +35,7 @@ public class CodeArea {
 		state.Theme = EditorGUIUtility.isProSkin ? CodeAreaTheme.DEFAULT_DARK : CodeAreaTheme.DEFAULT_LIGHT;
 		state.SetLines(input.Split('\n'));
 
-		Rect inputBounds = new(position.position + PADDING, position.size - PADDING * 2);
+		Rect inputBounds = new Rect(position.position + PADDING, position.size - PADDING * 2);
 		switch (Event.current.GetTypeForControl(controlId)) {
 			case EventType.KeyDown:
 				string newInput = HandleKeyDownEvent(input, state, out bool canShowAutoComplete);
@@ -77,9 +77,9 @@ public class CodeArea {
 		Color oldColor = GUI.color;
 		GUIDrawUtils.FillRoundRect(position, state.Theme.BackgroundColor, 5);
 		GUIDrawUtils.DrawRoundRect(position, hasFocus ? state.Theme.SelectedBorderColor : state.Theme.NormalBorderColor, 2, 5);
-		Rect codeAreaBounds = new(Vector2.zero, GetCodeAreaSize(state, position.width));
+		Rect codeAreaBounds = new Rect(Vector2.zero, GetCodeAreaSize(state, position.width));
 		state.scrollPosition = GUI.BeginScrollView(position, state.scrollPosition, codeAreaBounds);
-		Rect contentBounds = new(codeAreaBounds.position + PADDING, codeAreaBounds.size - PADDING * 2);
+		Rect contentBounds = new Rect(codeAreaBounds.position + PADDING, codeAreaBounds.size - PADDING * 2);
 		GUI.BeginGroup(contentBounds);
 
 		EditorGUIUtility.AddCursorRect(new Rect(Vector2.zero, contentBounds.size), MouseCursor.Text);
@@ -157,11 +157,11 @@ public class CodeArea {
 			int longestTypeName = state.autoCompleteTypes.Skip(state.AutoCompleteIndex).Take(MAX_AUTO_COMPLETE_OPTIONS).Aggregate(0, (current, fieldType) => Mathf.Max(current, fieldType.Name.Length));
 
 			Vector2 positionAtCursor = position.position + contentBounds.position + state.GetPositionAtTextIndex(state.selectionEndInternal);
-			Vector2 autoCompleteWindowSize = new((longestFieldName + 3 + longestTypeName) * state.CharWidth, Math.Min(MAX_AUTO_COMPLETE_OPTIONS, state.autoCompleteOptions.Count) * state.LineHeight);
+			Vector2 autoCompleteWindowSize = new Vector2((longestFieldName + 3 + longestTypeName) * state.CharWidth, Math.Min(MAX_AUTO_COMPLETE_OPTIONS, state.autoCompleteOptions.Count) * state.LineHeight);
 			float maxY = position.y + position.height;
 			float maxWindowY = positionAtCursor.y + autoCompleteWindowSize.y;
 			if (maxWindowY > maxY) positionAtCursor.y -= maxWindowY - maxY;
-			Rect bounds = new(positionAtCursor, autoCompleteWindowSize);
+			Rect bounds = new Rect(positionAtCursor, autoCompleteWindowSize);
 
 			GUI.BeginClip(bounds);
 			bounds.position = Vector2.zero;

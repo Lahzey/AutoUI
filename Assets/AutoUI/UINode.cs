@@ -6,14 +6,14 @@ using UnityEngine;
 
 namespace AutoUI {
 public class UINode {
-	private readonly List<UINode> children = new();
+	private readonly List<UINode> children = new List<UINode>();
 
-	private readonly List<AutoUIConstraint> constraints = new();
+	private readonly List<AutoUIConstraint> constraints = new List<AutoUIConstraint>();
 	public readonly GameObject gameObject;
 	public readonly string hierarchyPath;
 	public readonly int instanceId;
 
-	public readonly List<Func<UINode, DataContext, DataContext>> prepareChildContext = new();
+	public readonly List<Func<UINode, DataContext, DataContext>> prepareChildContext = new List<Func<UINode, DataContext, DataContext>>();
 	private ShowConstraint showConstraint; // handle show constraints separately
 
 	public UINode(GameObject gameObject) {

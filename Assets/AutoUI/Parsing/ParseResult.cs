@@ -4,14 +4,14 @@ using AutoUI.Parsing.Expressions;
 
 namespace AutoUI.Parsing {
 public class ParseResult : IEnumerable<ParsedElement> {
-	private readonly List<ParsedElement> elements = new();
+	private readonly List<ParsedElement> elements = new List<ParsedElement>();
 
-	public readonly Dictionary<int, Expression> expressionsAtPositions = new(); // a mapping used by inspector to determine which expression is at a given position
+	public readonly Dictionary<int, Expression> expressionsAtPositions = new Dictionary<int, Expression>(); // a mapping used by inspector to determine which expression is at a given position
 	public Expression ExpressionAtPosition(int i) => expressionsAtPositions.TryGetValue(i, out Expression value) ? value : null;
 
 	// used for the inspector so it can know what certain source elements map to
 	public readonly string source;
-	private readonly List<int> sourceIndexes = new(); // the start indexes of the elements in the source
+	private readonly List<int> sourceIndexes = new List<int>(); // the start indexes of the elements in the source
 
 	public ParseResult(string source) {
 		this.source = source;

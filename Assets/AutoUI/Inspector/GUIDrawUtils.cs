@@ -8,7 +8,7 @@ public class GUIDrawUtils {
 	
 	// cached assets
 	private static Texture2D squigglyLineTexture;
-	private static readonly Dictionary<int, Texture2D> CIRCLE_TEXTURES = new(); // <radius, texture> all of them are white
+	private static readonly Dictionary<int, Texture2D> CIRCLE_TEXTURES = new Dictionary<int, Texture2D>(); // <radius, texture> all of them are white
 	
 	public static void DrawSquigglyLine(int startPos, int endPos, CodeAreaState state) {
 		GUI.color = Color.white;
@@ -20,7 +20,7 @@ public class GUIDrawUtils {
 			int lineLength = state.lineLengths[i];
 			if (startPos < lineStart + lineLength) {
 				int end = Math.Min(endPos, lineStart + lineLength);
-				Rect position = new((startPos - lineStart) * state.CharWidth, (i + 1) * state.LineHeight - squigglyLineTexture.height, (end - startPos) * state.CharWidth, squigglyLineTexture.height);
+				Rect position = new Rect((startPos - lineStart) * state.CharWidth, (i + 1) * state.LineHeight - squigglyLineTexture.height, (end - startPos) * state.CharWidth, squigglyLineTexture.height);
 				GUI.DrawTextureWithTexCoords(position, squigglyLineTexture, new Rect(0, 0, position.width / squigglyLineTexture.width, 1));
 				startPos = end + 1; // +1 for the newline character
 				if (endPos == end) break;
@@ -76,8 +76,8 @@ public class GUIDrawUtils {
 		if (CIRCLE_TEXTURES.ContainsKey(radius) && CIRCLE_TEXTURES[radius] != null) return CIRCLE_TEXTURES[radius];
 
 		int diameter = 2 * radius;
-		Vector2 center = new(radius, radius);
-		Texture2D texture = new(diameter, diameter);
+		Vector2 center = new Vector2(radius, radius);
+		Texture2D texture = new Texture2D(diameter, diameter);
 		for (int x = 0; x < diameter; x++)
 		for (int y = 0; y < diameter; y++) {
 			float distance = Vector2.Distance(new Vector2(x, y), center);
@@ -114,8 +114,8 @@ public class GUIDrawUtils {
 	private static void DrawArc(Vector2 center, float radius, float startAngle, float endAngle, Color color, float width) {
 		Handles.BeginGUI();
 		Handles.color = color;
-		Vector3 from = new(Mathf.Cos(Mathf.Deg2Rad * startAngle), Mathf.Sin(Mathf.Deg2Rad * startAngle), 0f);
-		Vector3 to = new(Mathf.Cos(Mathf.Deg2Rad * endAngle), Mathf.Sin(Mathf.Deg2Rad * endAngle), 0f);
+		Vector3 from = new Vector3(Mathf.Cos(Mathf.Deg2Rad * startAngle), Mathf.Sin(Mathf.Deg2Rad * startAngle), 0f);
+		Vector3 to = new Vector3(Mathf.Cos(Mathf.Deg2Rad * endAngle), Mathf.Sin(Mathf.Deg2Rad * endAngle), 0f);
 		Handles.DrawWireArc(center, Vector3.forward, from, endAngle - startAngle, radius);
 		Handles.EndGUI();
 	}

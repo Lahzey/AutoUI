@@ -15,14 +15,14 @@ public class ExpressionPatternAttribute : Attribute {
 	public bool AutoSpace { get; set; } = true;
 
 	public string GetPattern() {
-		List<string> pattern = new();
+		List<string> pattern = new List<string>();
 		foreach (object patternPart in patternParts)
 			if (patternPart is Type type) pattern.Add(TypeOfPattern(type));
 			else if (patternPart is string text) pattern.Add(text);
 			else throw new ArgumentException("ExpressionPatternAttribute only accepts strings and types as arguments.");
 
 		string joined = string.Join(AutoSpace ? " " : "", pattern);
-		StringBuilder resultBuilder = new();
+		StringBuilder resultBuilder = new StringBuilder();
 		foreach (char c in joined)
 			if (c == ' ') resultBuilder.Append(@" (?:" + WhitespaceToken.placeholder + @" )*");
 			else resultBuilder.Append(c);

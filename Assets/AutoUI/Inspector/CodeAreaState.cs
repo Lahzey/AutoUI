@@ -8,10 +8,10 @@ using UnityEngine;
 
 namespace AutoUI.Inspector {
 public class CodeAreaState {
-	public readonly List<string> autoCompleteOptions = new();
-	public readonly List<string> autoCompleteTextInserts = new();
-	public readonly List<Type> autoCompleteTypes = new();
-	public readonly List<int> lineLengths = new();
+	public readonly List<string> autoCompleteOptions = new List<string>();
+	public readonly List<string> autoCompleteTextInserts = new List<string>();
+	public readonly List<Type> autoCompleteTypes = new List<Type>();
+	public readonly List<int> lineLengths = new List<int>();
 
 	private GUIStyle contentStyle;
 	public Vector2 scrollPosition;

@@ -131,21 +131,21 @@ public class WhitespaceToken : Token {
 }
 
 public class SingleCharToken : Token {
-	public static SingleCharToken plus = new('+');
-	public static SingleCharToken minus = new('-');
-	public static SingleCharToken mult = new('*');
-	public static SingleCharToken divide = new('/');
-	public static SingleCharToken lparen = new('(');
-	public static SingleCharToken rparen = new(')');
-	public static SingleCharToken assign = new('=');
-	public static SingleCharToken greater = new('>');
-	public static SingleCharToken smaller = new('<');
-	public static SingleCharToken and = new('&');
-	public static SingleCharToken or = new('|');
-	public static SingleCharToken not = new('!');
-	public static SingleCharToken dot = new('.');
-	public static SingleCharToken cond = new('?');
-	public static SingleCharToken alt = new(':');
+	public static SingleCharToken plus = new SingleCharToken('+');
+	public static SingleCharToken minus = new SingleCharToken('-');
+	public static SingleCharToken mult = new SingleCharToken('*');
+	public static SingleCharToken divide = new SingleCharToken('/');
+	public static SingleCharToken lparen = new SingleCharToken('(');
+	public static SingleCharToken rparen = new SingleCharToken(')');
+	public static SingleCharToken assign = new SingleCharToken('=');
+	public static SingleCharToken greater = new SingleCharToken('>');
+	public static SingleCharToken smaller = new SingleCharToken('<');
+	public static SingleCharToken and = new SingleCharToken('&');
+	public static SingleCharToken or = new SingleCharToken('|');
+	public static SingleCharToken not = new SingleCharToken('!');
+	public static SingleCharToken dot = new SingleCharToken('.');
+	public static SingleCharToken cond = new SingleCharToken('?');
+	public static SingleCharToken alt = new SingleCharToken(':');
 
 	internal static readonly SingleCharToken[] VALUES = { plus, minus, mult, divide, lparen, rparen, assign, greater, smaller, and, or, not, dot, cond, alt };
 
@@ -172,12 +172,12 @@ public class SingleCharToken : Token {
 }
 
 public class MultiCharToken : Token {
-	public static MultiCharToken equals = new(SingleCharToken.assign, SingleCharToken.assign);
-	public static MultiCharToken notEquals = new(SingleCharToken.not, SingleCharToken.assign);
-	public static MultiCharToken logicalAnd = new(SingleCharToken.and, SingleCharToken.and);
-	public static MultiCharToken logicalOr = new(SingleCharToken.or, SingleCharToken.or);
-	public static MultiCharToken greaterOrEqual = new(SingleCharToken.greater, SingleCharToken.assign);
-	public static MultiCharToken smallerOrEqual = new(SingleCharToken.smaller, SingleCharToken.assign);
+	public static MultiCharToken equals = new MultiCharToken(SingleCharToken.assign, SingleCharToken.assign);
+	public static MultiCharToken notEquals = new MultiCharToken(SingleCharToken.not, SingleCharToken.assign);
+	public static MultiCharToken logicalAnd = new MultiCharToken(SingleCharToken.and, SingleCharToken.and);
+	public static MultiCharToken logicalOr = new MultiCharToken(SingleCharToken.or, SingleCharToken.or);
+	public static MultiCharToken greaterOrEqual = new MultiCharToken(SingleCharToken.greater, SingleCharToken.assign);
+	public static MultiCharToken smallerOrEqual = new MultiCharToken(SingleCharToken.smaller, SingleCharToken.assign);
 
 	internal static readonly MultiCharToken[] VALUES = { equals, notEquals, logicalAnd, logicalOr, greaterOrEqual, smallerOrEqual };
 

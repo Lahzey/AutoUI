@@ -13,7 +13,7 @@ public class Player : MonoBehaviour {
 	[SerializeField] private Item orangeItem;
 	[SerializeField] private Item bananaItem;
 
-	public Dictionary<Item, int> inventory = new();
+	public Dictionary<Item, int> inventory = new Dictionary<Item, int>();
 
 	private void Awake() {
 		DataStore.INSTANCE.Set(DataKeys.player, this);

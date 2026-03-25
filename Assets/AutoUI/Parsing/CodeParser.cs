@@ -5,7 +5,7 @@ using AutoUI.Parsing.Expressions;
 
 namespace AutoUI.Parsing {
 public class CodeParser {
-	private static readonly object INIT_LOCK = new();
+	private static readonly object INIT_LOCK = new object();
 
 	private static Dictionary<string, Type> valueTypePatterns;
 	private static Dictionary<string, int> valueTypePatternPriorities;

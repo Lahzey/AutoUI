@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace AutoUI.Parsing {
 public class ParseException : Exception {
-	private readonly List<int> endPositions = new();
-	private readonly List<string> messages = new();
-	private readonly List<int> startPositions = new();
+	private readonly List<int> endPositions = new List<int>();
+	private readonly List<string> messages = new List<string>();
+	private readonly List<int> startPositions = new List<int>();
 
 	public void AddMessage(string message, int startPosition, int endPosition) {
 		messages.Add(message);

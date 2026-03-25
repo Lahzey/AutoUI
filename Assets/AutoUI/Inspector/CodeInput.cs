@@ -8,9 +8,9 @@ namespace AutoUI.Inspector {
 [Serializable]
 public class CodeInput {
 	// we don't want to serialize parse results, and we also don't need to parse given string more than once
-	private static readonly Dictionary<string, ParseResult> PARSE_RESULTS = new();
+	private static readonly Dictionary<string, ParseResult> PARSE_RESULTS = new Dictionary<string, ParseResult>();
 
-	private static readonly List<string> CURRENTLY_PARSING = new();
+	private static readonly List<string> CURRENTLY_PARSING = new List<string>();
 
 	[FormerlySerializedAs("Input")] public string input = "";
 	public ParseResult Result => GetParseResultAwait(input);
@@ -48,17 +48,17 @@ public class CodeInput {
 			CURRENTLY_PARSING.Add(input);
 		}
 
-		Thread thread = new(() => {
-			ParseResult result = CodeParser.TryParse(input);
-			onResult?.Invoke(result);
-			lock (PARSE_RESULTS) {
-				if (!PARSE_RESULTS.ContainsKey(input)) PARSE_RESULTS.Add(input, result); // the contains key check should be redundant, but just in case
-			}
+		Thread thread = new Thread(() => {
+            ParseResult result = CodeParser.TryParse(input);
+            onResult?.Invoke(result);
+            lock (PARSE_RESULTS) {
+                if (!PARSE_RESULTS.ContainsKey(input)) PARSE_RESULTS.Add(input, result); // the contains key check should be redundant, but just in case
+            }
 
-			lock (CURRENTLY_PARSING) {
-				CURRENTLY_PARSING.Remove(input);
-			}
-		});
+            lock (CURRENTLY_PARSING) {
+                CURRENTLY_PARSING.Remove(input);
+            }
+        });
 		thread.Start();
 	}
 }
