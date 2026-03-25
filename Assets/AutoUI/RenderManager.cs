@@ -10,8 +10,8 @@ public class RenderManager : MonoBehaviour {
 
 	[SerializeField] private float renderInterval = 0.1f;
 
-	public readonly List<UINode> RootUINodes = new();
-	private readonly Dictionary<int, UINode> UINodeMapping = new(); // maps gameObject instanceIDs to UINodes
+	public readonly List<UINode> rootUINodes = new();
+	private readonly Dictionary<int, UINode> uiNodeMapping = new(); // maps gameObject instanceIDs to UINodes
 	private float storedDeltaTime = 0f;
 
 
@@ -33,48 +33,48 @@ public class RenderManager : MonoBehaviour {
 	}
 
 	private void Render() {
-		foreach (UINode uiNode in RootUINodes) uiNode.Render(DataStore.Instance);
+		foreach (UINode uiNode in rootUINodes) uiNode.Render(DataStore.INSTANCE);
 	}
 
 	public UINode GetUINode(int instanceID) {
-		if (UINodeMapping.ContainsKey(instanceID))
-			return UINodeMapping[instanceID];
+		if (uiNodeMapping.ContainsKey(instanceID))
+			return uiNodeMapping[instanceID];
 		return null;
 	}
 
 	public UINode AddUINode(GameObject gameObject) {
 		UINode uiNode = new(gameObject);
-		UINodeMapping.Add(uiNode.InstanceId, uiNode);
+		uiNodeMapping.Add(uiNode.instanceId, uiNode);
 
-		foreach (UINode rootUINode in RootUINodes.ToList()) // use ToList() to prevent modifying the list while iterating over it, not efficient but that is not crucial here
+		foreach (UINode rootUINode in rootUINodes.ToList()) // use ToList() to prevent modifying the list while iterating over it, not efficient but that is not crucial here
 		{
 			// check if this node is a child of the root node
-			if (uiNode.HierarchyPath.StartsWith(rootUINode.HierarchyPath)) {
+			if (uiNode.hierarchyPath.StartsWith(rootUINode.hierarchyPath)) {
 				rootUINode.AddChild(uiNode);
 				return uiNode; // return early to prevent adding this node as a root node, if this node is a child of a root node there shouldn't be any other root nodes that are a child of this node anyway
 			}
 
 			// check if the root node should be a child of this node
-			if (rootUINode.HierarchyPath.StartsWith(uiNode.HierarchyPath)) {
+			if (rootUINode.hierarchyPath.StartsWith(uiNode.hierarchyPath)) {
 				uiNode.AddChild(rootUINode);
-				RootUINodes.Remove(rootUINode);
+				rootUINodes.Remove(rootUINode);
 			}
 		}
 
-		RootUINodes.Add(uiNode);
+		rootUINodes.Add(uiNode);
 		return uiNode;
 	}
 
 	public void RemoveUINode(UINode uiNode) {
-		UINodeMapping.Remove(uiNode.InstanceId);
+		uiNodeMapping.Remove(uiNode.instanceId);
 
-		foreach (UINode rootUINode in RootUINodes)
-			if (uiNode.HierarchyPath.StartsWith(rootUINode.HierarchyPath)) {
+		foreach (UINode rootUINode in rootUINodes)
+			if (uiNode.hierarchyPath.StartsWith(rootUINode.hierarchyPath)) {
 				rootUINode.RemoveChild(uiNode);
 				return;
 			}
 
-		RootUINodes.Remove(uiNode);
+		rootUINodes.Remove(uiNode);
 	}
 }
 }

@@ -24,7 +24,7 @@ public class ExpressionPatternAttribute : Attribute {
 		string joined = string.Join(AutoSpace ? " " : "", pattern);
 		StringBuilder resultBuilder = new();
 		foreach (char c in joined)
-			if (c == ' ') resultBuilder.Append(@" (?:" + WhitespaceToken.PLACEHOLDER + @" )*");
+			if (c == ' ') resultBuilder.Append(@" (?:" + WhitespaceToken.placeholder + @" )*");
 			else resultBuilder.Append(c);
 		return resultBuilder.ToString();
 	}
@@ -47,10 +47,10 @@ public class ExpressionPatternAttribute : Attribute {
 
 [AttributeUsage(AttributeTargets.Class)]
 public class PatternPriorityAttribute : Attribute {
-	public readonly int Priority;
+	public readonly int priority;
 
 	public PatternPriorityAttribute(int priority) {
-		Priority = priority;
+		this.priority = priority;
 	}
 }
 }

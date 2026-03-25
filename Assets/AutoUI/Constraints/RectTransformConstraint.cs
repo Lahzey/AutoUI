@@ -16,19 +16,19 @@ public class RectTransformConstraint : AutoUIConstraint {
 	private Expression[] expressions;
 	private RectTransform rectTransform;
 
-	private CodeInput[] constraints => new[] { minXConstraint, maxXConstraint, minYConstraint, maxYConstraint };
+	private CodeInput[] Constraints => new[] { minXConstraint, maxXConstraint, minYConstraint, maxYConstraint };
 
 	protected override void Awake() {
 		base.Awake();
 		rectTransform = GetComponent<RectTransform>();
 
-		CodeInput[] constraints = this.constraints;
+		CodeInput[] constraints = this.Constraints;
 		expressions = new Expression[constraints.Length];
 		for (int i = 0; i < constraints.Length; i++) {
 			CodeInput constraint = constraints[i];
-			if (constraint.Input.Length == 0) continue;
+			if (constraint.input.Length == 0) continue;
 			ParseResult parseResult = constraint.Result;
-			if (parseResult is not { Success: true }) Debug.LogError("Failed to parse RectTransformConstraint expression '" + constraint.Input + "'.", this);
+			if (parseResult is not { Success: true }) Debug.LogError("Failed to parse RectTransformConstraint expression '" + constraint.input + "'.", this);
 			else expressions[i] = parseResult.Expression;
 		}
 	}
@@ -48,7 +48,7 @@ public class RectTransformConstraint : AutoUIConstraint {
 			if (expression != null) {
 				object value = expression.Evaluate(context);
 				if (value is short or int or long or float or double) values[i] = (float)value;
-				else Debug.LogError("RectTransformConstraint expression '" + constraints[i].Input + "' does not evaluate to a number. Result: " + value);
+				else Debug.LogError("RectTransformConstraint expression '" + Constraints[i].input + "' does not evaluate to a number. Result: " + value);
 			}
 		}
 

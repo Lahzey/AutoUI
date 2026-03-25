@@ -5,28 +5,28 @@ using System.Reflection;
 namespace AutoUI.Data {
 public class DataKeyBase {
 	private static Dictionary<string, DataKeyBase> dataKeyRegistry;
-	public readonly string Key;
+	public readonly string key;
 
-	public readonly Type Type;
+	public readonly Type type;
 
 	internal DataKeyBase(Type type, string key) {
-		Type = type;
-		Key = key;
+		this.type = type;
+		this.key = key;
 	}
 
 	public static DataKeyBase Get(string key) {
-		if (dataKeyRegistry == null) initRegistry();
+		if (dataKeyRegistry == null) InitRegistry();
 		return dataKeyRegistry.ContainsKey(key) ? dataKeyRegistry[key] : null;
 	}
 
 	public static DataKeyBase[] GetAll() {
-		if (dataKeyRegistry == null) initRegistry();
+		if (dataKeyRegistry == null) InitRegistry();
 		DataKeyBase[] dataKeys = new DataKeyBase[dataKeyRegistry.Count];
 		dataKeyRegistry.Values.CopyTo(dataKeys, 0);
 		return dataKeys;
 	}
 
-	private static void initRegistry() {
+	private static void InitRegistry() {
 		dataKeyRegistry = new Dictionary<string, DataKeyBase>();
 
 		// use reflection to get all subclasses of DataKey<T> and add all their static fields of type DataKey<T> to the registry
@@ -39,7 +39,7 @@ public class DataKeyBase {
 					if (!field.FieldType.IsSubclassOf(dataKeyType)) continue;
 
 					DataKeyBase dataKey = (DataKeyBase)field.GetValue(null);
-					dataKeyRegistry.Add(dataKey.Key, dataKey);
+					dataKeyRegistry.Add(dataKey.key, dataKey);
 				}
 			}
 		}

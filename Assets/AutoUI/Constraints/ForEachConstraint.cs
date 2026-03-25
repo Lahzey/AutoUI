@@ -26,7 +26,7 @@ public class ForEachConstraint : AutoUIConstraint {
 
 		ParseResult parseResult = collectionConstraint.Result;
 		collectionExpression = parseResult is { Success: true } ? parseResult.Expression : null;
-		if (collectionExpression == null) Debug.LogError("Failed to parse collection expression '" + collectionConstraint.Input + "', defaulting to empty list.", this);
+		if (collectionExpression == null) Debug.LogError("Failed to parse collection expression '" + collectionConstraint.input + "', defaulting to empty list.", this);
 
 		childTemplates = new GameObject[gameObject.transform.childCount];
 		for (int i = 0; i < gameObject.transform.childCount; i++) {
@@ -37,22 +37,22 @@ public class ForEachConstraint : AutoUIConstraint {
 	}
 
 	private void OnEnable() {
-		node.PrepareChildContext.Add(PrepareChildContext);
+		node.prepareChildContext.Add(PrepareChildContext);
 	}
 
 	private void OnDisable() {
-		node.PrepareChildContext.Remove(PrepareChildContext);
+		node.prepareChildContext.Remove(PrepareChildContext);
 	}
 
 	private DataContext PrepareChildContext(UINode childNode, DataContext context) {
 		if (childTemplates.Length == 0) return context;
 
 		int childIndex = -1;
-		if (childIndices.ContainsKey(childNode.HierarchyPath)) childIndex = childIndices[childNode.HierarchyPath];
+		if (childIndices.ContainsKey(childNode.hierarchyPath)) childIndex = childIndices[childNode.hierarchyPath];
 		else
 			for (int i = 0; i < children.Count; i++) {
-				string directChildHierarchyPath = node.HierarchyPath + children[i].gameObject.GetInstanceID();
-				string distantChildHierarchyPath = childNode.HierarchyPath;
+				string directChildHierarchyPath = node.hierarchyPath + children[i].gameObject.GetInstanceID();
+				string distantChildHierarchyPath = childNode.hierarchyPath;
 				bool startsWith = distantChildHierarchyPath.StartsWith(directChildHierarchyPath);
 				if (startsWith) {
 					childIndices[distantChildHierarchyPath] = i;

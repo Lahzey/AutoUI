@@ -37,7 +37,7 @@ public class VariableExpression : Expression {
 	}
 
 	public override Type GetExpectedType() {
-		if (contextType == null) return DataKeyBase.Get(VariableName)?.Type ?? typeof(object);
+		if (contextType == null) return DataKeyBase.Get(VariableName)?.type ?? typeof(object);
 		if (contextType == typeof(object)) return typeof(object);
 		return contextType.GetField(VariableName)?.FieldType ?? contextType.GetProperty(VariableName)?.PropertyType ?? typeof(object);
 	}
@@ -93,9 +93,9 @@ public class ConditionalExpression : Expression {
 	public Expression SecondExpression => (Expression)args[2];
 
 	public override object Evaluate(DataContext context) {
-		object ConditionValue = Condition.Evaluate(context);
-		if (ConditionValue == null) return FirstExpression.Evaluate(context);
-		if (ConditionValue is bool b) return b ? FirstExpression.Evaluate(context) : SecondExpression.Evaluate(context);
+		object conditionValue = Condition.Evaluate(context);
+		if (conditionValue == null) return FirstExpression.Evaluate(context);
+		if (conditionValue is bool b) return b ? FirstExpression.Evaluate(context) : SecondExpression.Evaluate(context);
 		throw new EvaluationException("ConditionalExpression condition must be a boolean", this);
 	}
 }

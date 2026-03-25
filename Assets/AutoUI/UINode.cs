@@ -9,22 +9,22 @@ public class UINode {
 	private readonly List<UINode> children = new();
 
 	private readonly List<AutoUIConstraint> constraints = new();
-	public readonly GameObject GameObject;
-	public readonly string HierarchyPath;
-	public readonly int InstanceId;
+	public readonly GameObject gameObject;
+	public readonly string hierarchyPath;
+	public readonly int instanceId;
 
-	public readonly List<Func<UINode, DataContext, DataContext>> PrepareChildContext = new();
+	public readonly List<Func<UINode, DataContext, DataContext>> prepareChildContext = new();
 	private ShowConstraint showConstraint; // handle show constraints separately
 
 	public UINode(GameObject gameObject) {
-		GameObject = gameObject;
-		HierarchyPath = GetHierarchyPath(gameObject.transform);
-		InstanceId = gameObject.GetInstanceID();
+		this.gameObject = gameObject;
+		hierarchyPath = GetHierarchyPath(gameObject.transform);
+		instanceId = gameObject.GetInstanceID();
 	}
 
 	public void AddChild(UINode child) {
 		foreach (UINode uiNode in children)
-			if (child.HierarchyPath.StartsWith(uiNode.HierarchyPath)) {
+			if (child.hierarchyPath.StartsWith(uiNode.hierarchyPath)) {
 				uiNode.AddChild(child);
 				return;
 			}
@@ -36,7 +36,7 @@ public class UINode {
 		if (children.Remove(child)) return;
 
 		foreach (UINode uiNode in children)
-			if (child.HierarchyPath.StartsWith(uiNode.HierarchyPath)) {
+			if (child.hierarchyPath.StartsWith(uiNode.hierarchyPath)) {
 				uiNode.RemoveChild(child);
 				return;
 			}
@@ -72,14 +72,14 @@ public class UINode {
 	public void Render(DataContext context) {
 		if (showConstraint is not null) showConstraint.Render(context); // do not use null propagation here, we do NOT want to use null equality checks
 
-		if (!GameObject.activeInHierarchy) return; // not rendering hidden constraints
+		if (!gameObject.activeInHierarchy) return; // not rendering hidden constraints
 
 		foreach (AutoUIConstraint constraint in constraints) constraint.Render(context);
 
 		for (int i = 0; i < children.Count; i++) {
 			UINode child = children[i];
 			// TODO: find a way to check if the child is scheduled for destruction to prevent getting errors for 1 frame when destroying a child
-			foreach (Func<UINode, DataContext, DataContext> prepareChildContext in PrepareChildContext) context = prepareChildContext(child, context);
+			foreach (Func<UINode, DataContext, DataContext> prepareChildContext in prepareChildContext) context = prepareChildContext(child, context);
 			child.Render(context);
 		}
 	}

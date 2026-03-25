@@ -8,26 +8,26 @@ using UnityEngine;
 
 namespace AutoUI.Inspector {
 public class CodeAreaState {
-	public readonly List<string> AutoCompleteOptions = new();
-	public readonly List<string> AutoCompleteTextInserts = new();
-	public readonly List<Type> AutoCompleteTypes = new();
-	public readonly List<int> LineLengths = new();
+	public readonly List<string> autoCompleteOptions = new();
+	public readonly List<string> autoCompleteTextInserts = new();
+	public readonly List<Type> autoCompleteTypes = new();
+	public readonly List<int> lineLengths = new();
 
-	private GUIStyle _contentStyle;
+	private GUIStyle contentStyle;
 	public Vector2 scrollPosition;
-	public int SelectionEndInternal;
+	public int selectionEndInternal;
 
-	public int SelectionStartInternal;
-	public int SelectionStart => Mathf.Min(SelectionStartInternal, SelectionEndInternal);
-	public int SelectionEnd => Mathf.Max(SelectionStartInternal, SelectionEndInternal);
+	public int selectionStartInternal;
+	public int SelectionStart => Mathf.Min(selectionStartInternal, selectionEndInternal);
+	public int SelectionEnd => Mathf.Max(selectionStartInternal, selectionEndInternal);
 	public bool ShowAutoComplete { get; private set; }
 	public int AutoCompleteIndex { get; set; }
 	public int AutoCompleteSelection { get; set; }
 
 	public GUIStyle ContentStyle {
-		get => _contentStyle;
+		get => contentStyle;
 		set {
-			_contentStyle = value;
+			contentStyle = value;
 			LineHeight = ContentStyle.font.lineHeight;
 			CharWidth = ContentStyle.font.characterInfo[0].advance; // doesn't matter which character, all consolas chars are the same width
 		}
@@ -40,19 +40,19 @@ public class CodeAreaState {
 	public CodeAreaTheme Theme { get; set; }
 
 	public void SetCursor(int index) {
-		SelectionStartInternal = index;
-		SelectionEndInternal = index;
+		selectionStartInternal = index;
+		selectionEndInternal = index;
 	}
 
 	public void ClampSelection(int inputLength) {
-		SelectionStartInternal = Math.Clamp(SelectionStartInternal, 0, inputLength);
-		SelectionEndInternal = Math.Clamp(SelectionEndInternal, 0, inputLength);
+		selectionStartInternal = Math.Clamp(selectionStartInternal, 0, inputLength);
+		selectionEndInternal = Math.Clamp(selectionEndInternal, 0, inputLength);
 	}
 
 	public void SetLines(string[] lines) {
 		Lines = lines;
-		LineLengths.Clear();
-		foreach (string line in lines) LineLengths.Add(line.Length);
+		lineLengths.Clear();
+		foreach (string line in lines) lineLengths.Add(line.Length);
 	}
 
 	public void CreateAutoComplete(string input) {
@@ -64,7 +64,7 @@ public class CodeAreaState {
 			Type contextType = null;
 			string fieldPrefix = null;
 
-			if (textIndex > 0 && parseResult.Source[textIndex - 1] == '.') {
+			if (textIndex > 0 && parseResult.source[textIndex - 1] == '.') {
 				Expression contextExpression = GetExpressionAt(parseResult, textIndex - 2, out int expressionStart);
 				if (contextExpression != null) contextType = contextExpression.GetExpectedType();
 			}
@@ -81,10 +81,10 @@ public class CodeAreaState {
 			if (contextType == null) // null means we look at the data store
 			{
 				foreach (DataKeyBase dataKey in DataKeyBase.GetAll())
-					if (fieldPrefix == null || (dataKey.Key.StartsWith(fieldPrefix) && dataKey.Key != fieldPrefix)) {
-						AutoCompleteOptions.Add(dataKey.Key);
-						AutoCompleteTypes.Add(dataKey.Type);
-						AutoCompleteTextInserts.Add(dataKey.Key[(fieldPrefix?.Length ?? 0)..]);
+					if (fieldPrefix == null || (dataKey.key.StartsWith(fieldPrefix) && dataKey.key != fieldPrefix)) {
+						autoCompleteOptions.Add(dataKey.key);
+						autoCompleteTypes.Add(dataKey.type);
+						autoCompleteTextInserts.Add(dataKey.key[(fieldPrefix?.Length ?? 0)..]);
 					}
 
 				ShowAutoComplete = true;
@@ -93,28 +93,28 @@ public class CodeAreaState {
 			{
 				foreach (FieldInfo fieldInfo in contextType.GetFields())
 					if (fieldPrefix == null || (fieldInfo.Name.StartsWith(fieldPrefix) && fieldInfo.Name != fieldPrefix)) {
-						AutoCompleteOptions.Add(fieldInfo.Name);
-						AutoCompleteTypes.Add(fieldInfo.FieldType);
-						AutoCompleteTextInserts.Add(fieldInfo.Name[(fieldPrefix?.Length ?? 0)..]);
+						autoCompleteOptions.Add(fieldInfo.Name);
+						autoCompleteTypes.Add(fieldInfo.FieldType);
+						autoCompleteTextInserts.Add(fieldInfo.Name[(fieldPrefix?.Length ?? 0)..]);
 					}
 
 				foreach (PropertyInfo propertyInfo in contextType.GetProperties())
 					if ((propertyInfo.GetMethod.IsPublic && fieldPrefix == null) || (propertyInfo.Name.StartsWith(fieldPrefix) && propertyInfo.Name != fieldPrefix)) {
-						AutoCompleteOptions.Add(propertyInfo.Name);
-						AutoCompleteTypes.Add(propertyInfo.PropertyType);
-						AutoCompleteTextInserts.Add(propertyInfo.Name[(fieldPrefix?.Length ?? 0)..]);
+						autoCompleteOptions.Add(propertyInfo.Name);
+						autoCompleteTypes.Add(propertyInfo.PropertyType);
+						autoCompleteTextInserts.Add(propertyInfo.Name[(fieldPrefix?.Length ?? 0)..]);
 					}
 
-				ShowAutoComplete = AutoCompleteOptions.Count > 0;
+				ShowAutoComplete = autoCompleteOptions.Count > 0;
 			}
 		});
 	}
 
 	public void HideAutoComplete() {
 		ShowAutoComplete = false;
-		AutoCompleteOptions.Clear();
-		AutoCompleteTypes.Clear();
-		AutoCompleteTextInserts.Clear();
+		autoCompleteOptions.Clear();
+		autoCompleteTypes.Clear();
+		autoCompleteTextInserts.Clear();
 		AutoCompleteIndex = 0;
 	}
 
@@ -132,19 +132,19 @@ public class CodeAreaState {
 	}
 
 	public int GetTextIndexAtPosition(Vector2 position) {
-		int lineIndex = Math.Clamp(Mathf.FloorToInt(position.y / LineHeight), 0, LineLengths.Count - 1);
-		int lineLength = LineLengths[lineIndex];
+		int lineIndex = Math.Clamp(Mathf.FloorToInt(position.y / LineHeight), 0, lineLengths.Count - 1);
+		int lineLength = lineLengths[lineIndex];
 		int charIndex = Math.Clamp(Mathf.RoundToInt(position.x / CharWidth), 0, lineLength);
 		int textIndex = 0;
-		for (int i = 0; i < lineIndex; i++) textIndex += LineLengths[i] + 1; // +1 for newline
+		for (int i = 0; i < lineIndex; i++) textIndex += lineLengths[i] + 1; // +1 for newline
 		textIndex += charIndex;
 		return textIndex;
 	}
 
 	public Vector2 GetPositionAtTextIndex(int textIndex) {
 		int index = 0;
-		for (int i = 0; i < LineLengths.Count; i++) {
-			int lineLength = LineLengths[i];
+		for (int i = 0; i < lineLengths.Count; i++) {
+			int lineLength = lineLengths[i];
 			if (textIndex <= index + lineLength) // textIndex == index+lineLength means position is to the right of the last character on the line
 			{
 				int indexInLine = textIndex - index;
@@ -154,7 +154,7 @@ public class CodeAreaState {
 			index += lineLength + 1; // +1 for newline
 		}
 
-		return new Vector2(0, LineLengths.Count * LineHeight); // shouldn't happen, but default return is required
+		return new Vector2(0, lineLengths.Count * LineHeight); // shouldn't happen, but default return is required
 	}
 }
 }

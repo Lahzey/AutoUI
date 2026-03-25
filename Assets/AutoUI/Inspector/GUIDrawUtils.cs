@@ -7,8 +7,8 @@ namespace AutoUI.Inspector {
 public class GUIDrawUtils {
 	
 	// cached assets
-	private static Texture2D SquigglyLineTexture;
-	private static readonly Dictionary<int, Texture2D> CircleTextures = new(); // <radius, texture> all of them are white
+	private static Texture2D squigglyLineTexture;
+	private static readonly Dictionary<int, Texture2D> CIRCLE_TEXTURES = new(); // <radius, texture> all of them are white
 	
 	public static void DrawSquigglyLine(int startPos, int endPos, CodeAreaState state) {
 		GUI.color = Color.white;
@@ -17,7 +17,7 @@ public class GUIDrawUtils {
 
 		int lineStart = 0;
 		for (int i = 0; i < state.Lines.Length; i++) {
-			int lineLength = state.LineLengths[i];
+			int lineLength = state.lineLengths[i];
 			if (startPos < lineStart + lineLength) {
 				int end = Math.Min(endPos, lineStart + lineLength);
 				Rect position = new((startPos - lineStart) * state.CharWidth, (i + 1) * state.LineHeight - squigglyLineTexture.height, (end - startPos) * state.CharWidth, squigglyLineTexture.height);
@@ -73,7 +73,7 @@ public class GUIDrawUtils {
 	}
 
 	private static Texture2D GetCircleTexture(int radius) {
-		if (CircleTextures.ContainsKey(radius) && CircleTextures[radius] != null) return CircleTextures[radius];
+		if (CIRCLE_TEXTURES.ContainsKey(radius) && CIRCLE_TEXTURES[radius] != null) return CIRCLE_TEXTURES[radius];
 
 		int diameter = 2 * radius;
 		Vector2 center = new(radius, radius);
@@ -85,23 +85,23 @@ public class GUIDrawUtils {
 		}
 
 		texture.Apply();
-		CircleTextures[radius] = texture;
+		CIRCLE_TEXTURES[radius] = texture;
 		return texture;
 	}
 
 	private static Texture2D GetSquigglyLineTexture() {
-		if (SquigglyLineTexture != null) return SquigglyLineTexture;
+		if (squigglyLineTexture != null) return squigglyLineTexture;
 
 
-		SquigglyLineTexture = new Texture2D(4, 3);
-		SquigglyLineTexture.SetPixels(new[] {
+		squigglyLineTexture = new Texture2D(4, 3);
+		squigglyLineTexture.SetPixels(new[] {
 			Color.clear, Color.red, Color.clear, Color.clear,
 			Color.red, new(0.85882352941f, 0, 0, 0.25f), Color.red, Color.clear,
 			Color.clear, Color.clear, Color.clear, Color.red
 		});
-		SquigglyLineTexture.Apply(false);
-		SquigglyLineTexture.wrapMode = TextureWrapMode.Repeat;
-		return SquigglyLineTexture;
+		squigglyLineTexture.Apply(false);
+		squigglyLineTexture.wrapMode = TextureWrapMode.Repeat;
+		return squigglyLineTexture;
 	}
 
 	private static void DrawLine(Vector2 start, Vector2 end, Color color, float width) {

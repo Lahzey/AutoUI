@@ -46,7 +46,7 @@ public class Tokenizer {
 						parseResult.Add(new WhitespaceToken(c), i + 1);
 					}
 					else {
-						SingleCharToken token = SingleCharToken.get(c);
+						SingleCharToken token = SingleCharToken.Get(c);
 						if (token != null) {
 							// if we have any text, finalize the identifier token
 							if (currentText.Length > 0) {

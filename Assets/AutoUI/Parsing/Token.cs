@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 namespace AutoUI.Parsing {
 public abstract class Token : ParsedElement {
 	public static Token Get(string tokenString) {
-		Token[] tokens = tokenString.Length == 1 ? SingleCharToken.Values : MultiCharToken.Values;
+		Token[] tokens = tokenString.Length == 1 ? SingleCharToken.VALUES : MultiCharToken.VALUES;
 		foreach (Token token in tokens)
 			if (token.ToString().Equals(tokenString))
 				return token;
@@ -113,7 +113,7 @@ public class NumberToken : Token {
 }
 
 public class WhitespaceToken : Token {
-	public static char PLACEHOLDER = 'W';
+	public static char placeholder = 'W';
 
 	private char whitespace;
 
@@ -122,32 +122,32 @@ public class WhitespaceToken : Token {
 	}
 
 	public override string ToString() {
-		return PLACEHOLDER + "";
+		return placeholder + "";
 	}
 
 	public override string GetPlaceholder() {
-		return PLACEHOLDER + "";
+		return placeholder + "";
 	}
 }
 
 public class SingleCharToken : Token {
-	public static SingleCharToken PLUS = new('+');
-	public static SingleCharToken MINUS = new('-');
-	public static SingleCharToken MULT = new('*');
-	public static SingleCharToken DIVIDE = new('/');
-	public static SingleCharToken LPAREN = new('(');
-	public static SingleCharToken RPAREN = new(')');
-	public static SingleCharToken ASSIGN = new('=');
-	public static SingleCharToken GREATER = new('>');
-	public static SingleCharToken SMALLER = new('<');
-	public static SingleCharToken AND = new('&');
-	public static SingleCharToken OR = new('|');
-	public static SingleCharToken NOT = new('!');
-	public static SingleCharToken DOT = new('.');
-	public static SingleCharToken COND = new('?');
-	public static SingleCharToken ALT = new(':');
+	public static SingleCharToken plus = new('+');
+	public static SingleCharToken minus = new('-');
+	public static SingleCharToken mult = new('*');
+	public static SingleCharToken divide = new('/');
+	public static SingleCharToken lparen = new('(');
+	public static SingleCharToken rparen = new(')');
+	public static SingleCharToken assign = new('=');
+	public static SingleCharToken greater = new('>');
+	public static SingleCharToken smaller = new('<');
+	public static SingleCharToken and = new('&');
+	public static SingleCharToken or = new('|');
+	public static SingleCharToken not = new('!');
+	public static SingleCharToken dot = new('.');
+	public static SingleCharToken cond = new('?');
+	public static SingleCharToken alt = new(':');
 
-	internal static readonly SingleCharToken[] Values = { PLUS, MINUS, MULT, DIVIDE, LPAREN, RPAREN, ASSIGN, GREATER, SMALLER, AND, OR, NOT, DOT, COND, ALT };
+	internal static readonly SingleCharToken[] VALUES = { plus, minus, mult, divide, lparen, rparen, assign, greater, smaller, and, or, not, dot, cond, alt };
 
 	public readonly char c;
 
@@ -155,8 +155,8 @@ public class SingleCharToken : Token {
 		this.c = c;
 	}
 
-	public static SingleCharToken get(char c) {
-		foreach (SingleCharToken value in Values)
+	public static SingleCharToken Get(char c) {
+		foreach (SingleCharToken value in VALUES)
 			if (value.c == c)
 				return value;
 		return null;
@@ -172,14 +172,14 @@ public class SingleCharToken : Token {
 }
 
 public class MultiCharToken : Token {
-	public static MultiCharToken EQUALS = new(SingleCharToken.ASSIGN, SingleCharToken.ASSIGN);
-	public static MultiCharToken NOT_EQUALS = new(SingleCharToken.NOT, SingleCharToken.ASSIGN);
-	public static MultiCharToken LOGICAL_AND = new(SingleCharToken.AND, SingleCharToken.AND);
-	public static MultiCharToken LOGICAL_OR = new(SingleCharToken.OR, SingleCharToken.OR);
-	public static MultiCharToken GREATER_OR_EQUAL = new(SingleCharToken.GREATER, SingleCharToken.ASSIGN);
-	public static MultiCharToken SMALLER_OR_EQUAL = new(SingleCharToken.SMALLER, SingleCharToken.ASSIGN);
+	public static MultiCharToken equals = new(SingleCharToken.assign, SingleCharToken.assign);
+	public static MultiCharToken notEquals = new(SingleCharToken.not, SingleCharToken.assign);
+	public static MultiCharToken logicalAnd = new(SingleCharToken.and, SingleCharToken.and);
+	public static MultiCharToken logicalOr = new(SingleCharToken.or, SingleCharToken.or);
+	public static MultiCharToken greaterOrEqual = new(SingleCharToken.greater, SingleCharToken.assign);
+	public static MultiCharToken smallerOrEqual = new(SingleCharToken.smaller, SingleCharToken.assign);
 
-	internal static readonly MultiCharToken[] Values = { EQUALS, NOT_EQUALS, LOGICAL_AND, LOGICAL_OR, GREATER_OR_EQUAL, SMALLER_OR_EQUAL };
+	internal static readonly MultiCharToken[] VALUES = { equals, notEquals, logicalAnd, logicalOr, greaterOrEqual, smallerOrEqual };
 
 	private readonly SingleCharToken[] tokens;
 
@@ -196,7 +196,7 @@ public class MultiCharToken : Token {
 			tokenString += token.ToString();
 		}
 
-		foreach (MultiCharToken multiCharToken in Values) {
+		foreach (MultiCharToken multiCharToken in VALUES) {
 			string id = multiCharToken.ToString();
 			int index = tokenString.IndexOf(id, StringComparison.Ordinal);
 			while (index != -1) {

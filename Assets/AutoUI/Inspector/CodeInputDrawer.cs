@@ -27,7 +27,7 @@ public class CodeInputDrawer : PropertyDrawer {
 		sourceProperty.stringValue = CodeArea.ScrolledArea(position, sourceProperty.stringValue, parseResult, GUI.skin.label, out lastPreferredSize);
 
 		string source = sourceProperty.stringValue;
-		if (parseResult == null || source != parseResult.Source) parseResult = CodeInput.GetParseResult(source) ?? parseResult; // will return null if that source has not been parsed yet, in which case we will stick with the old parse result until the new one is ready
+		if (parseResult == null || source != parseResult.source) parseResult = CodeInput.GetParseResult(source) ?? parseResult; // will return null if that source has not been parsed yet, in which case we will stick with the old parse result until the new one is ready
 
 		EditorGUI.EndProperty();
 	}

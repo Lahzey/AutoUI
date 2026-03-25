@@ -4,28 +4,28 @@ using UnityEngine;
 namespace AutoUI.Inspector {
 public class CodeAreaTheme {
 	// Colors used by Unity for the Inspector, according to ChatGPT (seems to be correct, how the hell does it know though?)
-	private static readonly Color BackgroundUnityDark = new Color(0.172549f, 0.172549f, 0.172549f);
-	private static readonly Color BackgroundUnityLight = new Color(0.952941f, 0.952941f, 0.952941f);
-	private static readonly Color ForegroundUnityDark = new Color(0.866667f, 0.866667f, 0.866667f);
-	private static readonly Color ForegroundUnityLight = new Color(0.2f, 0.2f, 0.2f);
-	private static readonly Color NormalBorderUnityDark = new Color(0.235294f, 0.235294f, 0.235294f);
-	private static readonly Color NormalBorderUnityLight = new Color(0.760784f, 0.760784f, 0.760784f);
-	private static readonly Color HoverBorderUnityDark = new Color(0.360784f, 0.360784f, 0.360784f);
-	private static readonly Color HoverBorderUnityLight = new Color(0.643137f, 0.643137f, 0.643137f);
-	private static readonly Color SelectedBorderUnityDark = new Color(0.0f, 0.478431f, 0.8f);
-	private static readonly Color SelectedBorderUnityLight = new Color(0.0f, 0.478431f, 0.8f);
+	private static readonly Color BACKGROUND_UNITY_DARK = new Color(0.172549f, 0.172549f, 0.172549f);
+	private static readonly Color BACKGROUND_UNITY_LIGHT = new Color(0.952941f, 0.952941f, 0.952941f);
+	private static readonly Color FOREGROUND_UNITY_DARK = new Color(0.866667f, 0.866667f, 0.866667f);
+	private static readonly Color FOREGROUND_UNITY_LIGHT = new Color(0.2f, 0.2f, 0.2f);
+	private static readonly Color NORMAL_BORDER_UNITY_DARK = new Color(0.235294f, 0.235294f, 0.235294f);
+	private static readonly Color NORMAL_BORDER_UNITY_LIGHT = new Color(0.760784f, 0.760784f, 0.760784f);
+	private static readonly Color HOVER_BORDER_UNITY_DARK = new Color(0.360784f, 0.360784f, 0.360784f);
+	private static readonly Color HOVER_BORDER_UNITY_LIGHT = new Color(0.643137f, 0.643137f, 0.643137f);
+	private static readonly Color SELECTED_BORDER_UNITY_DARK = new Color(0.0f, 0.478431f, 0.8f);
+	private static readonly Color SELECTED_BORDER_UNITY_LIGHT = new Color(0.0f, 0.478431f, 0.8f);
 	
-	private static readonly Color SelectionTextBackground = new(0.23f, 0.47f, 0.73f, 1);
+	private static readonly Color SELECTION_TEXT_BACKGROUND = new(0.23f, 0.47f, 0.73f, 1);
 
-	private static readonly Color RiderAutoCompleteNormalBackground = new Color(0.9686f, 0.9686f, 0.9686f);
-	private static readonly Color RiderAutoCompleteSelectedBackground = new Color(0.77255f, 0.8745f, 0.988f);
-	private static readonly Color RiderAutoCompleteBorder = new Color(0.67058f, 0.67058f, 0.67058f);
+	private static readonly Color RIDER_AUTO_COMPLETE_NORMAL_BACKGROUND = new Color(0.9686f, 0.9686f, 0.9686f);
+	private static readonly Color RIDER_AUTO_COMPLETE_SELECTED_BACKGROUND = new Color(0.77255f, 0.8745f, 0.988f);
+	private static readonly Color RIDER_AUTO_COMPLETE_BORDER = new Color(0.67058f, 0.67058f, 0.67058f);
 
 	public static readonly CodeAreaTheme DEFAULT_DARK = new CodeAreaTheme() { // non-Unity colors are taken from IntelliJ's 'Dark' Theme
-		BackgroundColor = BackgroundUnityDark,
-		NormalBorderColor = NormalBorderUnityDark,
-		HoverBorderColor = HoverBorderUnityDark,
-		SelectedBorderColor = SelectedBorderUnityDark,
+		BackgroundColor = BACKGROUND_UNITY_DARK,
+		NormalBorderColor = NORMAL_BORDER_UNITY_DARK,
+		HoverBorderColor = HOVER_BORDER_UNITY_DARK,
+		SelectedBorderColor = SELECTED_BORDER_UNITY_DARK,
 		DefaultTextColor = new Color(0.6627451f, 0.7176471f, 0.7764706f),
 		KeywordTextColor = new Color(0.8f, 0.47058824f, 0.19607843f),
 		StringTextColor = new Color(0.41568628f, 0.5294118f, 0.34901962f),
@@ -36,19 +36,19 @@ public class CodeAreaTheme {
 		FieldTextColor = new Color(0.59607846f, 0.4627451f, 0.6666667f),
 		ErrorTextColor = new Color(0.7372549f, 0.24705882f, 0.23529412f),
 		CursorColor = Color.white,
-		SelectionTextBackgroundColor = SelectionTextBackground,
+		SelectionTextBackgroundColor = SELECTION_TEXT_BACKGROUND,
 		ErrorUnderlineColor = new Color(0.7372549f, 0.24705882f, 0.23529412f),
 		WarningUnderlineColor = new Color(0.68235296f, 0.68235296f, 0.5019608f),
-		AutoCompleteNormalBackgroundColor = RiderAutoCompleteNormalBackground,
-		AutoCompleteSelectedBackgroundColor = RiderAutoCompleteSelectedBackground,
-		AutoCompleteBorderColor = RiderAutoCompleteBorder
+		AutoCompleteNormalBackgroundColor = RIDER_AUTO_COMPLETE_NORMAL_BACKGROUND,
+		AutoCompleteSelectedBackgroundColor = RIDER_AUTO_COMPLETE_SELECTED_BACKGROUND,
+		AutoCompleteBorderColor = RIDER_AUTO_COMPLETE_BORDER
 	};
 
 	public static readonly CodeAreaTheme DEFAULT_LIGHT = new CodeAreaTheme() { // non-Unity colors are taken from IntelliJ's 'IntelliJ Light' Theme
-		BackgroundColor = BackgroundUnityLight,
-		NormalBorderColor = NormalBorderUnityLight,
-		HoverBorderColor = HoverBorderUnityLight,
-		SelectedBorderColor = SelectedBorderUnityLight,
+		BackgroundColor = BACKGROUND_UNITY_LIGHT,
+		NormalBorderColor = NORMAL_BORDER_UNITY_LIGHT,
+		HoverBorderColor = HOVER_BORDER_UNITY_LIGHT,
+		SelectedBorderColor = SELECTED_BORDER_UNITY_LIGHT,
 		DefaultTextColor = new Color(0.03137255f, 0.03137255f, 0.03137255f),
 		KeywordTextColor = new Color(0.0f, 0.2f, 0.7019608f),
 		StringTextColor = new Color(0.023529412f, 0.49019608f, 0.09019608f),
@@ -59,12 +59,12 @@ public class CodeAreaTheme {
 		FieldTextColor = new Color(0.5294118f, 0.0627451f, 0.5803922f),
 		ErrorTextColor = new Color(0.9607843f, 0.0f, 0.0f),
 		CursorColor = Color.black,
-		SelectionTextBackgroundColor = SelectionTextBackground,
+		SelectionTextBackgroundColor = SELECTION_TEXT_BACKGROUND,
 		ErrorUnderlineColor = new Color(1.0f, 0.0f, 0.0f),
 		WarningUnderlineColor = new Color(0.95686275f, 0.59607846f, 0.0627451f),
-		AutoCompleteNormalBackgroundColor = RiderAutoCompleteNormalBackground,
-		AutoCompleteSelectedBackgroundColor = RiderAutoCompleteSelectedBackground,
-		AutoCompleteBorderColor = RiderAutoCompleteBorder
+		AutoCompleteNormalBackgroundColor = RIDER_AUTO_COMPLETE_NORMAL_BACKGROUND,
+		AutoCompleteSelectedBackgroundColor = RIDER_AUTO_COMPLETE_SELECTED_BACKGROUND,
+		AutoCompleteBorderColor = RIDER_AUTO_COMPLETE_BORDER
 	};
 	
 	

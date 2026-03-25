@@ -16,7 +16,7 @@ public class Player : MonoBehaviour {
 	public Dictionary<Item, int> inventory = new();
 
 	private void Awake() {
-		DataStore.Instance.Set(DataKeys.Player, this);
+		DataStore.INSTANCE.Set(DataKeys.player, this);
 	}
 
 	private void Update() {
@@ -26,7 +26,7 @@ public class Player : MonoBehaviour {
 
 		bool shiftDown = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
 		if (Input.GetKeyDown(KeyCode.I))
-			DataStore.Instance.Set(DataKeys.ShowInventory, !DataStore.Instance.Get(DataKeys.ShowInventory));
+			DataStore.INSTANCE.Set(DataKeys.showInventory, !DataStore.INSTANCE.Get(DataKeys.showInventory));
 		if (Input.GetKeyDown(KeyCode.A))
 			if (shiftDown) DropItem(appleItem);
 			else PickupItem(appleItem);

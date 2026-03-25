@@ -19,7 +19,7 @@ public class ImageConstraint : AutoUIConstraint {
 
 		ParseResult parseResult = imageConstraint.Result;
 		imageExpression = parseResult is { Success: true } ? parseResult.Expression : null;
-		if (imageExpression == null) Debug.LogError("Failed to parse image expression '" + imageConstraint.Input + "', defaulting to null.", this);
+		if (imageExpression == null) Debug.LogError("Failed to parse image expression '" + imageConstraint.input + "', defaulting to null.", this);
 	}
 
 	public override void Render(DataContext context) {

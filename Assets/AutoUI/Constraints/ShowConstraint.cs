@@ -17,7 +17,7 @@ public class ShowConstraint : AutoUIConstraint {
 
 		ParseResult parseResult = conditionConstraint.Result;
 		conditionExpression = parseResult is { Success: true } ? parseResult.Expression : null;
-		if (conditionExpression == null) Debug.LogError("Failed to parse condition expression '" + conditionConstraint.Input + "', defaulting to true.", this);
+		if (conditionExpression == null) Debug.LogError("Failed to parse condition expression '" + conditionConstraint.input + "', defaulting to true.", this);
 	}
 
 	public override void Render(DataContext context) {

@@ -19,7 +19,7 @@ public class TextConstraint : AutoUIConstraint {
 
 		ParseResult parseResult = textConstraint.Result;
 		textExpression = parseResult is { Success: true } ? parseResult.Expression : null;
-		if (textExpression == null) Debug.LogError("Failed to parse text expression '" + textConstraint.Input + "', defaulting to empty string.", this);
+		if (textExpression == null) Debug.LogError("Failed to parse text expression '" + textConstraint.input + "', defaulting to empty string.", this);
 	}
 
 	public override void Render(DataContext context) {
